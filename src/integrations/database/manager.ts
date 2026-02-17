@@ -19,7 +19,7 @@ class DatabaseManager {
    */
   getProvider(): DatabaseProvider {
     const provider = import.meta.env.VITE_DATABASE_PROVIDER as DatabaseProvider;
-    return provider || 'supabase'; // Default to Supabase for backward compatibility
+    return provider || 'external-api'; // Default to external API (helixgeneralhardware.com/api.php)
   }
 
   /**

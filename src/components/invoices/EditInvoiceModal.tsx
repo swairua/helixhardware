@@ -32,7 +32,7 @@ import {
 import { useCustomers, useProducts, useTaxSettings } from '@/hooks/useDatabase';
 import { useUpdateInvoiceWithItems } from '@/hooks/useQuotationItems';
 import { useCurrentCompany } from '@/contexts/CompanyContext';
-import { supabase } from '@/integrations/supabase/client';
+import { getDatabase } from '@/integrations/database';
 import { toast } from 'sonner';
 
 interface InvoiceItem {
@@ -149,31 +149,15 @@ export function EditInvoiceModal({ open, onOpenChange, onSuccess, invoice }: Edi
         });
 
         try {
-          const { data: items, error } = await supabase
-            .from('invoice_items')
-            .select(`
-              id,
-              product_id,
-              products (
-                name
-              ),
-              description,
-              quantity,
-              unit_price,
-              discount_percentage,
-              discount_before_vat,
-              tax_percentage,
-              tax_amount,
-              tax_inclusive,
-              line_total
-            `)
-            .eq('invoice_id', invoice.id)
-            .order('sort_order', { ascending: true });
+          const db = getDatabase();
+          const itemsResult = await db.selectBy('invoice_items', { invoice_id: invoice.id });
 
-          if (error) {
-            console.error('❌ Fallback fetch error:', error);
+          if (itemsResult.error) {
+            console.error('❌ Fallback fetch error:', itemsResult.error);
             return;
           }
+
+          const items = itemsResult.data || [];
 
           if (items && items.length > 0) {
             console.log('✅ Fallback fetch successful - Found items:', {
@@ -185,7 +169,7 @@ export function EditInvoiceModal({ open, onOpenChange, onSuccess, invoice }: Edi
             const mappedItems: InvoiceItem[] = items.map((item: any, index: number) => ({
               id: item.id,
               product_id: item.product_id || '',
-              product_name: item.products?.name || 'Unknown Product',
+              product_name: item.product_name || 'Unknown Product',
               description: item.description || '',
               quantity: item.quantity || 0,
               unit_price: item.unit_price || 0,

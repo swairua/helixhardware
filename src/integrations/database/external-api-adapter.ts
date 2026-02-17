@@ -207,23 +207,60 @@ export class ExternalAPIAdapter implements IDatabase {
       params.append('action', action);
       if (table) params.append('table', table);
 
+      // Handle special query parameters (limit, order, etc) from where clause
+      if (where && typeof where === 'object') {
+        if (where._limit) {
+          params.append('limit', where._limit);
+        }
+        if (where._order) {
+          const order = where._order;
+          if (typeof order === 'object' && order.column && order.direction) {
+            params.append('order', `${order.column} ${order.direction.toUpperCase()}`);
+          }
+        }
+      }
+
       // Log the API call attempt
       const logPrefix = `📡 [${method.toUpperCase()}] ${action}${table ? ` on ${table}` : ''}`;
       console.log(`${logPrefix} - Starting request...`);
 
-      // For update and delete operations, backend expects 'where' parameter
-      if ((action === 'update' || action === 'delete') && where && typeof where === 'object') {
+      // For update, delete, and read operations, backend expects 'where' parameter
+      if ((action === 'update' || action === 'delete' || action === 'read') && where && typeof where === 'object') {
         // Convert where object to SQL WHERE clause format for the backend
         // e.g., {id: 123} becomes id=123
+        // Filter out special parameters (those starting with _) - they should go in URL params separately
         const whereParts: string[] = [];
         Object.entries(where).forEach(([key, value]) => {
+          // Skip special parameters (pagination, ordering, etc)
+          if (key.startsWith('_')) {
+            return;
+          }
+
+          // Skip if value is an object (can't be converted to SQL)
+          if (typeof value === 'object' && value !== null) {
+            console.warn(`⚠️ Skipping non-primitive where value for key "${key}":`, value);
+            return;
+          }
+
           if (typeof value === 'string') {
             whereParts.push(`${key}='${String(value).replace(/'/g, "''")}'`);
           } else {
             whereParts.push(`${key}=${value}`);
           }
         });
-        params.append('where', whereParts.join(' AND '));
+
+        if (whereParts.length > 0) {
+          params.append('where', whereParts.join(' AND '));
+        }
+
+        // DEBUG: Log the where clause being sent for read operations
+        if (action === 'read') {
+          console.log(`📡 [READ] Where clause being sent in URL for ${table}:`, {
+            whereObject: where,
+            whereClause: whereParts.join(' AND '),
+            skippedSpecialParams: Object.keys(where).filter(k => k.startsWith('_'))
+          });
+        }
       }
 
       const url = `${this.apiBase}?${params.toString()}`;
@@ -268,10 +305,8 @@ export class ExternalAPIAdapter implements IDatabase {
       if (data && typeof data === 'object' && Object.keys(data).length > 0) {
         body = data;
       }
-      // For read operations, include where clause in body if not in URL
-      else if ((action === 'read') && where && typeof where === 'object') {
-        body = where;
-      }
+      // For read operations with where clause, it's now in URL params, not in body
+      // This prevents duplicate filtering logic
 
       // Add timeout for fetch requests - extended to 60 seconds for slow APIs
       const controller = new AbortController();

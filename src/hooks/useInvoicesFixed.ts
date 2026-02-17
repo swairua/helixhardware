@@ -46,6 +46,9 @@ export const useInvoicesFixed = (companyId?: string) => {
 
         console.log('[useInvoicesFixed] Invoices fetched successfully, count:', invoices.length);
         console.log('[useInvoicesFixed] First invoice sample:', invoices[0]);
+        console.log('[useInvoicesFixed] First invoice keys:', invoices[0] ? Object.keys(invoices[0]) : 'N/A');
+        console.log('[useInvoicesFixed] First invoice has id?:', invoices[0]?.id);
+        console.log('[useInvoicesFixed] First invoice.id type:', typeof invoices[0]?.id);
 
         // Try to fetch customer data
         // Normalize customer IDs to strings for consistent lookup
@@ -133,10 +136,13 @@ export const useInvoicesFixed = (companyId?: string) => {
             customerId: invoice.customer_id,
             normalizedId: normalizedCustomerId,
             customerFound: !!customer,
-            customerName: customer?.name || 'Unknown Customer'
+            customerName: customer?.name || 'Unknown Customer',
+            invoiceObjKeys: Object.keys(invoice),
+            invoiceId: invoice.id,
+            invoiceIdType: typeof invoice.id
           });
 
-          return {
+          const enriched = {
             ...invoice,
             customers: customer || {
               name: 'Unknown Customer',
@@ -145,6 +151,15 @@ export const useInvoicesFixed = (companyId?: string) => {
             },
             invoice_items: itemsMap.get(invoice.id) || []
           };
+
+          console.log(`[useInvoicesFixed] After enrichment for ${invoice.invoice_number}:`, {
+            hasId: !!enriched.id,
+            enrichedId: enriched.id,
+            enrichedIdType: typeof enriched.id,
+            allKeys: Object.keys(enriched)
+          });
+
+          return enriched;
         });
 
         console.log('[useInvoicesFixed] Enrichment complete - Invoices with items:', enrichedInvoices.filter((inv: any) => inv.invoice_items.length > 0).length);

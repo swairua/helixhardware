@@ -217,17 +217,42 @@ export default function Invoices() {
 
   const handleEditInvoice = async (invoice: Invoice) => {
     try {
+      console.log('🔍 handleEditInvoice STARTED:', {
+        selectedInvoiceId: invoice.id,
+        selectedInvoiceNumber: invoice.invoice_number,
+        invoiceIdType: typeof invoice.id,
+        invoiceIdValue: invoice.id
+      });
+
       const db = getDatabase();
 
       // Fetch invoice
+      console.log('📋 Fetching invoice with selectOne, ID:', invoice.id);
       const invoiceResult = await db.selectOne('invoices', invoice.id);
+
+      console.log('📋 selectOne result:', {
+        hasError: !!invoiceResult.error,
+        errorMessage: invoiceResult.error?.message,
+        returnedId: invoiceResult.data?.id,
+        returnedInvoiceNumber: invoiceResult.data?.invoice_number,
+        returnedData: invoiceResult.data
+      });
+
       if (invoiceResult.error) throw invoiceResult.error;
       if (!invoiceResult.data) throw new Error('Invoice not found');
 
       const invoiceData = invoiceResult.data as any;
 
       // Fetch invoice items
+      console.log('📦 Fetching invoice items with filter:', { invoice_id: invoice.id });
       const itemsResult = await db.selectBy('invoice_items', { invoice_id: invoice.id });
+
+      console.log('📦 selectBy items result:', {
+        hasError: !!itemsResult.error,
+        itemsCount: (itemsResult.data || []).length,
+        items: itemsResult.data
+      });
+
       if (itemsResult.error) console.warn('Warning: Could not fetch invoice items');
 
       // Fetch customer info
@@ -246,9 +271,10 @@ export default function Invoices() {
 
       // DEBUG: Log the response
       console.log('🔍 handleEditInvoice - Full API Response:', {
-        invoiceId: invoice.id,
+        requestedInvoiceId: invoice.id,
+        returnedInvoiceId: fullInvoice.id,
         invoiceNumber: fullInvoice.invoice_number,
-        fullData: fullInvoice,
+        idsMatch: invoice.id === fullInvoice.id,
         invoiceItems: fullInvoice.invoice_items,
         itemsCount: fullInvoice.invoice_items?.length || 0,
         invoiceMetadata: {

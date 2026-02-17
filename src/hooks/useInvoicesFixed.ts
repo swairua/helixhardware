@@ -223,42 +223,70 @@ export const useDeleteInvoice = () => {
   return useMutation({
     mutationFn: async (invoiceId: string) => {
       try {
-        // Use the transaction-safe delete_invoice_with_cascade endpoint
-        // This handles cascading deletion of:
-        // - invoice_items
-        // - payment_allocations
-        // - payments
-        // - invoice itself
-        // All in a single database transaction
-        const response = await fetch(`${process.env.VITE_BACKEND_URL || 'http://localhost:3000'}/api.php?action=delete_invoice_with_cascade`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            invoice_id: invoiceId,
-          }),
+        console.log('🗑️ Starting invoice deletion for ID:', invoiceId);
+
+        // Step 1: Delete invoice items first (due to foreign key constraints)
+        console.log('📋 Deleting invoice items...');
+        const { data: invoiceItems, error: fetchItemsError } = await apiClient.select('invoice_items', {
+          invoice_id: invoiceId
         });
 
-        const result = await response.json();
-
-        if (!response.ok || result.status !== 'success') {
-          throw new Error(result.message || 'Failed to delete invoice');
+        if (fetchItemsError) {
+          console.warn('⚠️ Warning: Could not fetch invoice items for deletion, continuing anyway:', fetchItemsError);
+        } else if (Array.isArray(invoiceItems) && invoiceItems.length > 0) {
+          // Delete each invoice item
+          for (const item of invoiceItems) {
+            const deleteResult = await apiClient.delete('invoice_items', item.id);
+            if (deleteResult.error) {
+              console.warn('⚠️ Warning: Failed to delete invoice item:', item.id, deleteResult.error);
+            }
+          }
+          console.log('✅ Invoice items deleted');
         }
 
-        return result;
+        // Step 2: Delete payment allocations
+        console.log('💰 Deleting payment allocations...');
+        const { data: allocations, error: fetchAllocationsError } = await apiClient.select('payment_allocations', {
+          invoice_id: invoiceId
+        });
+
+        if (fetchAllocationsError) {
+          console.warn('⚠️ Warning: Could not fetch payment allocations, continuing anyway:', fetchAllocationsError);
+        } else if (Array.isArray(allocations) && allocations.length > 0) {
+          for (const allocation of allocations) {
+            const deleteResult = await apiClient.delete('payment_allocations', allocation.id);
+            if (deleteResult.error) {
+              console.warn('⚠️ Warning: Failed to delete payment allocation:', allocation.id, deleteResult.error);
+            }
+          }
+          console.log('✅ Payment allocations deleted');
+        }
+
+        // Step 3: Finally, delete the invoice itself
+        console.log('🗑️ Deleting invoice...');
+        const deleteResult = await apiClient.delete('invoices', invoiceId);
+
+        if (deleteResult.error) {
+          console.error('❌ Error deleting invoice:', deleteResult.error);
+          throw deleteResult.error;
+        }
+
+        console.log('✅ Invoice deleted successfully');
+        return { success: true, invoiceId };
       } catch (error) {
-        console.error('Error deleting invoice:', error);
+        console.error('❌ Error deleting invoice:', error);
         throw error;
       }
     },
     onSuccess: () => {
+      console.log('🎉 Invalidating invoices cache');
       queryClient.invalidateQueries({ queryKey: ['invoices_fixed'] });
       toast.success('Invoice deleted successfully!');
     },
     onError: (error) => {
-      console.error('Error deleting invoice:', error);
-      toast.error(`Failed to delete invoice: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error('❌ Invoice deletion error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      toast.error(`Failed to delete invoice: ${errorMessage}`);
     },
   });
 };

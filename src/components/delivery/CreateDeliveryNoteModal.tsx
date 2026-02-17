@@ -114,15 +114,21 @@ export const CreateDeliveryNoteModal = ({
         }));
 
         if (selectedInvoice.invoice_items && selectedInvoice.invoice_items.length > 0) {
-          const deliveryItems: DeliveryItem[] = selectedInvoice.invoice_items.map((item: Record<string, unknown>) => ({
-            id: `item-${item.id}`,
-            product_id: (item.product_id as string) || '',
-            product_name: (item.products as Record<string, unknown>)?.name as string || item.description as string || 'Unknown Product',
-            description: item.description as string || (item.products as Record<string, unknown>)?.name as string || '',
-            quantity_ordered: Math.max(Number(item.quantity) || 1, 1),
-            quantity_delivered: Math.max(Number(item.quantity) || 1, 1),
-            unit_of_measure: (item.products as Record<string, unknown>)?.unit_of_measure as string || 'pcs',
-          }));
+          const deliveryItems: DeliveryItem[] = selectedInvoice.invoice_items.map((item: Record<string, unknown>) => {
+            // Ensure quantity is a valid number greater than 0
+            const itemQuantity = Number(item.quantity);
+            const validQuantity = !isNaN(itemQuantity) && itemQuantity > 0 ? itemQuantity : 1;
+
+            return {
+              id: `item-${item.id}`,
+              product_id: (item.product_id as string) || '',
+              product_name: (item.products as Record<string, unknown>)?.name as string || item.description as string || 'Unknown Product',
+              description: item.description as string || (item.products as Record<string, unknown>)?.name as string || '',
+              quantity_ordered: validQuantity,
+              quantity_delivered: validQuantity, // Default to same quantity as ordered
+              unit_of_measure: (item.products as Record<string, unknown>)?.unit_of_measure as string || 'pcs',
+            };
+          });
 
           setItems(deliveryItems);
           toast.success(`Loaded ${deliveryItems.length} items from invoice ${selectedInvoice.invoice_number}`);
@@ -164,9 +170,24 @@ export const CreateDeliveryNoteModal = ({
   };
 
   const updateItem = (id: string, field: keyof DeliveryItem, value: any) => {
-    setItems(prev => prev.map(item => 
-      item.id === id ? { ...item, [field]: value } : item
-    ));
+    setItems(prev => prev.map(item => {
+      if (item.id === id) {
+        const updatedItem = { ...item, [field]: value };
+
+        // Ensure quantity_delivered doesn't exceed quantity_ordered
+        if (field === 'quantity_ordered' && value < updatedItem.quantity_delivered) {
+          updatedItem.quantity_delivered = value; // Adjust delivered to match ordered
+        }
+
+        // Ensure quantity_delivered is not less than quantity_ordered when reducing ordered
+        if (field === 'quantity_delivered' && value > item.quantity_ordered) {
+          updatedItem.quantity_delivered = item.quantity_ordered; // Cap at ordered quantity
+        }
+
+        return updatedItem;
+      }
+      return item;
+    }));
   };
 
   const removeItem = (id: string) => {
@@ -198,11 +219,24 @@ export const CreateDeliveryNoteModal = ({
 
     // Pre-validation check for quantities
     const invalidItems = items.filter(item =>
+      !item.quantity_ordered || item.quantity_ordered <= 0 ||
       !item.quantity_delivered || item.quantity_delivered <= 0
     );
 
     if (invalidItems.length > 0) {
-      toast.error(`Please ensure all items have valid delivery quantities greater than 0`);
+      const invalidItemNames = invalidItems.map(item => item.product_name).join(', ');
+      toast.error(`Invalid quantities for: ${invalidItemNames}. All items must have quantities greater than 0.`);
+      return;
+    }
+
+    // Validation: ensure delivered quantity doesn't exceed ordered quantity
+    const exceededItems = items.filter(item =>
+      item.quantity_delivered > item.quantity_ordered
+    );
+
+    if (exceededItems.length > 0) {
+      const exceededItemNames = exceededItems.map(item => item.product_name).join(', ');
+      toast.error(`Delivery quantity exceeds ordered quantity for: ${exceededItemNames}`);
       return;
     }
 

@@ -1,0 +1,56 @@
+# Apache Configuration for SPA Routing
+# This file should be placed in the dist/ directory of the deployed application
+# 
+# PURPOSE: Enable proper Single Page Application (SPA) routing
+# When a user refreshes the page or navigates directly to a non-root URL,
+# Apache will serve index.html instead of returning a 404 error.
+# This allows React Router or any client-side router to handle the route.
+
+<IfModule mod_rewrite.c>
+  # Enable the rewrite engine
+  RewriteEngine On
+  
+  # Set the base path (root directory)
+  RewriteBase /
+  
+  # Condition 1: If the requested file exists, serve it directly
+  RewriteCond %{REQUEST_FILENAME} -f
+  RewriteRule ^ - [L]
+  
+  # Condition 2: If the requested directory exists, serve it directly
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+  
+  # Condition 3: For all other requests (non-existent files/dirs),
+  # rewrite to index.html to let the SPA handle routing
+  RewriteRule ^ index.html [QSA,L]
+</IfModule>
+
+# Additional recommended configurations for SPA hosting
+
+# Gzip compression for better performance
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/javascript application/json
+</IfModule>
+
+# Cache control headers
+<FilesMatch "\.(html|htm)$">
+  Header set Cache-Control "no-cache, no-store, must-revalidate"
+</FilesMatch>
+
+<FilesMatch "\.(js|css|woff|woff2|ttf|svg|eot)$">
+  Header set Cache-Control "public, max-age=31536000, immutable"
+</FilesMatch>
+
+<FilesMatch "\.(jpg|jpeg|png|gif|ico|webp)$">
+  Header set Cache-Control "public, max-age=31536000, immutable"
+</FilesMatch>
+
+# Prevent directory listing
+Options -Indexes
+
+# Set proper MIME types
+AddType application/javascript js
+AddType application/json json
+AddEncoding gzip svgz
+AddType image/svg+xml svg svgz

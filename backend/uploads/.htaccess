@@ -1,0 +1,13 @@
+# Allow image files to be served directly
+<FilesMatch "\.(jpg|jpeg|png|gif|webp)$">
+    Header set Access-Control-Allow-Origin "*"
+    Header set Cache-Control "max-age=31536000, public"
+</FilesMatch>
+
+# Deny access to non-image files
+<FilesMatch "\.php$">
+    Deny from all
+</FilesMatch>
+
+# Prevent directory listing
+Options -Indexes

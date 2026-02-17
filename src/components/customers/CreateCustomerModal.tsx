@@ -1,0 +1,343 @@
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Switch } from '@/components/ui/switch';
+import {
+  User,
+  Mail,
+  Phone,
+  MapPin,
+  Building2,
+  CreditCard,
+  Plus
+} from 'lucide-react';
+import { toast } from 'sonner';
+import { useCreateCustomer, useCustomers } from '@/hooks/useDatabase';
+import { useCurrentCompany } from '@/contexts/CompanyContext';
+import { formatError } from '@/lib/utils';
+
+interface CreateCustomerModalProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSuccess: () => void;
+  companyId?: string;
+}
+
+export function CreateCustomerModal({ open, onOpenChange, onSuccess, companyId: propCompanyId }: CreateCustomerModalProps) {
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    address: '',
+    city: '',
+    country: 'Kenya',
+    credit_limit: 100000,
+    payment_terms: 0,
+    is_active: true,
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const { currentCompany, isLoading: isCompanyLoading, error: companyError } = useCurrentCompany();
+
+  // Use prop company ID as fallback, then default company UUID if nothing else available
+  const DEFAULT_COMPANY_ID = '550e8400-e29b-41d4-a716-446655440000';
+  const activeCompanyId = currentCompany?.id || propCompanyId || DEFAULT_COMPANY_ID;
+
+  const { data: customers } = useCustomers(activeCompanyId);
+  const createCustomer = useCreateCustomer();
+
+  const generateCustomerCode = () => {
+    // With DB-sequence in place customer codes will be assigned server-side.
+    return 'Will be assigned on save';
+  };
+
+  const handleSubmit = async () => {
+    if (!formData.name.trim()) {
+      toast.error('Customer name is required');
+      return;
+    }
+
+    // activeCompanyId should always have a value (fallback to DEFAULT_COMPANY_ID)
+    if (!activeCompanyId) {
+      console.error('Critical: No company ID available', { currentCompany, propCompanyId, activeCompanyId });
+      toast.error('System error: Unable to determine company. Please refresh and try again.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      // Send only the form data; customer_code and customer_number will be generated server-side by DB triggers/sequences.
+      const payload = {
+        company_id: activeCompanyId,
+        ...formData,
+      };
+
+      const created = await createCustomer.mutateAsync(payload);
+
+      const createdCode = created?.customer_code ?? created?.customer_number ? `CUST${String(created.customer_number).padStart(6, '0')}` : '';
+      toast.success(`Customer ${created?.name || formData.name} created successfully${createdCode ? ` (${createdCode})` : ''}!`);
+
+      onSuccess();
+      onOpenChange(false);
+
+      // Reset form
+      setFormData({
+        name: '',
+        email: '',
+        phone: '',
+        address: '',
+        city: '',
+        country: 'Kenya',
+        credit_limit: 100000,
+        payment_terms: 0,
+        is_active: true,
+      });
+    } catch (error: unknown) {
+      console.error('Error creating customer:', error);
+      const message = formatError(error);
+      toast.error(`Failed to create customer: ${message}`);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleInputChange = (field: string, value: unknown) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleCancel = () => {
+    // Reset form when canceling
+    setFormData({
+      name: '',
+      email: '',
+      phone: '',
+      address: '',
+      city: '',
+      country: 'Kenya',
+      credit_limit: 100000,
+      payment_terms: 0,
+      is_active: true,
+    });
+    onOpenChange(false);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center space-x-2">
+            <Plus className="h-5 w-5 text-primary" />
+            <span>Create New Customer</span>
+          </DialogTitle>
+          <DialogDescription>
+            Add a new customer to your database
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Basic Information */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center space-x-2">
+                <Building2 className="h-4 w-4" />
+                <span>Basic Information</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Customer Name *</Label>
+                <Input
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => handleInputChange('name', e.target.value)}
+                  placeholder="Enter customer name"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      id="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => handleInputChange('email', e.target.value)}
+                      placeholder="customer@example.com"
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Phone</Label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      id="phone"
+                      value={formData.phone}
+                      onChange={(e) => handleInputChange('phone', e.target.value)}
+                      placeholder="+254 700 000000"
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="address">Address</Label>
+                <div className="relative">
+                  <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Textarea
+                    id="address"
+                    value={formData.address}
+                    onChange={(e) => handleInputChange('address', e.target.value)}
+                    placeholder="Enter customer address"
+                    className="pl-10"
+                    rows={3}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="city">City</Label>
+                  <Input
+                    id="city"
+                    value={formData.city}
+                    onChange={(e) => handleInputChange('city', e.target.value)}
+                    placeholder="Nairobi"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="country">Country</Label>
+                  <Select value={formData.country} onValueChange={(value) => handleInputChange('country', value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select country" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Kenya">Kenya</SelectItem>
+                      <SelectItem value="Uganda">Uganda</SelectItem>
+                      <SelectItem value="Tanzania">Tanzania</SelectItem>
+                      <SelectItem value="Rwanda">Rwanda</SelectItem>
+                      <SelectItem value="Other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Business Settings */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center space-x-2">
+                <CreditCard className="h-4 w-4" />
+                <span>Business Settings</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="credit_limit">Credit Limit (KES)</Label>
+                <Input
+                  id="credit_limit"
+                  type="number"
+                  value={formData.credit_limit}
+                  onChange={(e) => handleInputChange('credit_limit', parseFloat(e.target.value) || 0)}
+                  placeholder="100000"
+                  min="0"
+                  step="1000"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="payment_terms">Payment Terms (Days)</Label>
+                <Select
+                  value={formData.payment_terms.toString()}
+                  onValueChange={(value) => handleInputChange('payment_terms', parseInt(value))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select payment terms" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0">Cash (Now)</SelectItem>
+                    <SelectItem value="14">14 days</SelectItem>
+                    <SelectItem value="45">45 days</SelectItem>
+                    <SelectItem value="60">60 days</SelectItem>
+                    <SelectItem value="120">120 days</SelectItem>
+                    <SelectItem value="180">Up to 180 days</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label htmlFor="is_active">Customer Status</Label>
+                  <div className="text-sm text-muted-foreground">
+                    {formData.is_active ? 'Active customer' : 'Inactive customer'}
+                  </div>
+                </div>
+                <Switch
+                  id="is_active"
+                  checked={formData.is_active}
+                  onCheckedChange={(checked) => handleInputChange('is_active', checked)}
+                />
+              </div>
+
+              <div className="mt-6 p-4 bg-muted/50 rounded-lg">
+                <h4 className="font-medium mb-2">Customer Preview</h4>
+                <div className="space-y-1 text-sm text-muted-foreground">
+                  <p>Code: {generateCustomerCode()}</p>
+                  <p>Credit Limit: KES {formData.credit_limit.toLocaleString()}</p>
+                  <p>Payment Terms: {formData.payment_terms === 0 ? 'Cash (Now)' : `${formData.payment_terms} days`}</p>
+                  <p>Status: {formData.is_active ? 'Active' : 'Inactive'}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <DialogFooter className="flex flex-col gap-2 sm:flex-row sm:gap-3">
+          {companyError && (
+            <div className="w-full sm:col-span-2 p-3 bg-yellow-50 border border-yellow-200 rounded-md text-sm text-yellow-800">
+              ℹ️ Using default company. Ensure your account is properly configured.
+            </div>
+          )}
+          <Button variant="outline" onClick={handleCancel} disabled={isSubmitting}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSubmit}
+            disabled={isSubmitting || !formData.name.trim()}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            {isSubmitting ? 'Creating...' : 'Create Customer'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}

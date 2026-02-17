@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: medical-frontend
+    env: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: node server.js
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      - key: VITE_EXTERNAL_API_URL
+        value: https://helixgeneralhardware.com/api.php
+    autoDeploy: false
+    routes:
+      - path: /
+        destination: /

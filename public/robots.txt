@@ -1,0 +1,40 @@
+# >> Medical Supplies - Robots.txt for Search Engine Crawlers
+# This file defines crawling rules for search engines
+
+# Default rules for all robots
+User-agent: *
+Allow: /
+Disallow: /app/
+Disallow: /admin/
+Disallow: /private/
+Disallow: /*?*
+Disallow: /auth-test
+Disallow: /manual-setup
+Disallow: /database-fix-page
+Disallow: /auto-fix
+Disallow: /audit
+Disallow: /auto-payment-sync
+Disallow: /payment-sync
+
+# Specific rules for different crawlers
+User-agent: Googlebot
+Allow: /
+Disallow: /app/
+Disallow: /admin/
+Disallow: /private/
+Crawl-delay: 0
+Request-rate: 1/1
+
+User-agent: Bingbot
+Allow: /
+Disallow: /app/
+Disallow: /admin/
+Disallow: /private/
+Crawl-delay: 1
+
+# Prevent crawling of PDF documents if needed
+User-agent: *
+Disallow: /*.pdf$
+
+# Sitemap location
+Sitemap: https://medplusafrica.com/sitemap.xml

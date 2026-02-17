@@ -233,8 +233,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
   }, []); // Empty dependency array - run only once on mount
 
-  // Periodic token validation - check every 5 minutes if token is still valid
+  // Periodic token validation - check every 30 minutes if token is still valid
   // This catches tokens that become invalid while the app is running (e.g., admin revokes)
+  // Increased interval from 5 minutes to 30 minutes to avoid interrupting long-running operations
   useEffect(() => {
     if (!user) return; // Only validate if user is authenticated
 
@@ -255,10 +256,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       try {
         // Silently check if token is still valid
+        // Don't log out on network errors or timeouts - user might be doing a long operation
         const { user: validatedUser, error } = await apiClient.auth.checkAuth();
 
         if (error || !validatedUser) {
-          // Token is no longer valid
+          // Token is no longer valid - clear it and logout
           console.warn('⚠️ Token validation failed during periodic check:', error?.message);
           clearAuthTokens();
 
@@ -270,13 +272,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           }
         }
       } catch (error) {
-        console.warn('⚠️ Periodic token validation error:', error);
-        // Don't logout on network errors - user might just be offline
+        console.warn('⚠️ Periodic token validation error (non-critical, continuing session):', error);
+        // Don't logout on network errors or timeouts - user might just be offline or doing long operation
       }
     };
 
-    // Run validation every 5 minutes
-    const validationInterval = setInterval(validateTokenPeriodically, 5 * 60 * 1000);
+    // Run validation every 30 minutes (increased from 5 minutes)
+    // This reduces interference with long-running operations like document creation
+    const validationInterval = setInterval(validateTokenPeriodically, 30 * 60 * 1000);
 
     return () => clearInterval(validationInterval);
   }, [user]); // Re-run when user changes

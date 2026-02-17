@@ -48,22 +48,42 @@ export const useInvoicesFixed = (companyId?: string) => {
         console.log('[useInvoicesFixed] First invoice sample:', invoices[0]);
 
         // Try to fetch customer data
-        const customerIds = [...new Set(invoices.map((invoice: any) => invoice.customer_id).filter(id => id && typeof id === 'string'))];
-        console.log('[useInvoicesFixed] Unique customer IDs found:', customerIds.length, customerIds);
+        // Normalize customer IDs to strings for consistent lookup
+        const rawCustomerIds = invoices.map((invoice: any) => invoice.customer_id).filter(id => id);
+        console.log('[useInvoicesFixed] Raw customer IDs found:', rawCustomerIds);
+        console.log('[useInvoicesFixed] Raw customer ID types:', rawCustomerIds.map(id => ({ id, type: typeof id })));
+
+        const customerIds = [...new Set(rawCustomerIds.map(id => String(id)))];
+        console.log('[useInvoicesFixed] Normalized unique customer IDs:', customerIds.length, customerIds);
 
         let customerMap = new Map();
 
         if (customerIds.length > 0) {
           try {
-            // Fetch customers
-            for (const customerId of customerIds) {
-              const { data: customer, error: customerError } = await apiClient.selectOne('customers', customerId);
-              console.log(`[useInvoicesFixed] Fetched customer ${customerId} - Error:`, customerError, 'Data:', customer);
-              if (!customerError && customer) {
+            // Fetch all customers at once to improve performance
+            console.log('[useInvoicesFixed] Fetching all customers...');
+            const { data: allCustomers, error: customersError } = await apiClient.select('customers', {});
+
+            if (customersError) {
+              console.warn('[useInvoicesFixed] Error fetching customers:', customersError);
+            } else if (Array.isArray(allCustomers)) {
+              console.log('[useInvoicesFixed] Fetched', allCustomers.length, 'customers from API');
+
+              // Create a map of all customers by ID
+              allCustomers.forEach((customer: any) => {
+                const customerId = String(customer.id);
                 customerMap.set(customerId, customer);
+                console.log(`[useInvoicesFixed] Mapped customer: ${customerId} -> ${customer.name}`);
+              });
+
+              console.log('[useInvoicesFixed] Customer map created with', customerMap.size, 'entries');
+
+              // Log missing customers
+              const missingCustomers = customerIds.filter(id => !customerMap.has(id));
+              if (missingCustomers.length > 0) {
+                console.warn('[useInvoicesFixed] Warning: These customer IDs were not found:', missingCustomers);
               }
             }
-            console.log('[useInvoicesFixed] Customer map size after fetching:', customerMap.size);
           } catch (e) {
             console.warn('[useInvoicesFixed] Could not fetch customer details (non-fatal):', e);
           }
@@ -103,19 +123,32 @@ export const useInvoicesFixed = (companyId?: string) => {
           }
         }
 
-        // Combine data
-        const enrichedInvoices = invoices.map((invoice: any) => ({
-          ...invoice,
-          customers: customerMap.get(invoice.customer_id) || {
-            name: 'Unknown Customer',
-            email: null,
-            phone: null
-          },
-          invoice_items: itemsMap.get(invoice.id) || []
-        }));
+        // Combine data - Normalize customer ID lookup to string
+        const enrichedInvoices = invoices.map((invoice: any) => {
+          // Normalize customer ID to string for consistent lookup
+          const normalizedCustomerId = String(invoice.customer_id);
+          const customer = customerMap.get(normalizedCustomerId);
+
+          console.log(`[useInvoicesFixed] Enriching invoice ${invoice.invoice_number}:`, {
+            customerId: invoice.customer_id,
+            normalizedId: normalizedCustomerId,
+            customerFound: !!customer,
+            customerName: customer?.name || 'Unknown Customer'
+          });
+
+          return {
+            ...invoice,
+            customers: customer || {
+              name: 'Unknown Customer',
+              email: null,
+              phone: null
+            },
+            invoice_items: itemsMap.get(invoice.id) || []
+          };
+        });
 
         console.log('[useInvoicesFixed] Enrichment complete - Invoices with items:', enrichedInvoices.filter((inv: any) => inv.invoice_items.length > 0).length);
-        console.log('[useInvoicesFixed] Final enriched invoices sample:', enrichedInvoices.slice(0, 2));
+        console.log('[useInvoicesFixed] Final enriched invoices:', enrichedInvoices.map((inv: any) => ({ number: inv.invoice_number, customer: inv.customers?.name })));
         return enrichedInvoices;
 
       } catch (error) {
@@ -223,42 +256,70 @@ export const useDeleteInvoice = () => {
   return useMutation({
     mutationFn: async (invoiceId: string) => {
       try {
-        // Use the transaction-safe delete_invoice_with_cascade endpoint
-        // This handles cascading deletion of:
-        // - invoice_items
-        // - payment_allocations
-        // - payments
-        // - invoice itself
-        // All in a single database transaction
-        const response = await fetch(`${process.env.VITE_BACKEND_URL || 'http://localhost:3000'}/api.php?action=delete_invoice_with_cascade`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            invoice_id: invoiceId,
-          }),
+        console.log('🗑️ Starting invoice deletion for ID:', invoiceId);
+
+        // Step 1: Delete invoice items first (due to foreign key constraints)
+        console.log('📋 Deleting invoice items...');
+        const { data: invoiceItems, error: fetchItemsError } = await apiClient.select('invoice_items', {
+          invoice_id: invoiceId
         });
 
-        const result = await response.json();
-
-        if (!response.ok || result.status !== 'success') {
-          throw new Error(result.message || 'Failed to delete invoice');
+        if (fetchItemsError) {
+          console.warn('⚠️ Warning: Could not fetch invoice items for deletion, continuing anyway:', fetchItemsError);
+        } else if (Array.isArray(invoiceItems) && invoiceItems.length > 0) {
+          // Delete each invoice item
+          for (const item of invoiceItems) {
+            const deleteResult = await apiClient.delete('invoice_items', item.id);
+            if (deleteResult.error) {
+              console.warn('⚠️ Warning: Failed to delete invoice item:', item.id, deleteResult.error);
+            }
+          }
+          console.log('✅ Invoice items deleted');
         }
 
-        return result;
+        // Step 2: Delete payment allocations
+        console.log('💰 Deleting payment allocations...');
+        const { data: allocations, error: fetchAllocationsError } = await apiClient.select('payment_allocations', {
+          invoice_id: invoiceId
+        });
+
+        if (fetchAllocationsError) {
+          console.warn('⚠️ Warning: Could not fetch payment allocations, continuing anyway:', fetchAllocationsError);
+        } else if (Array.isArray(allocations) && allocations.length > 0) {
+          for (const allocation of allocations) {
+            const deleteResult = await apiClient.delete('payment_allocations', allocation.id);
+            if (deleteResult.error) {
+              console.warn('⚠️ Warning: Failed to delete payment allocation:', allocation.id, deleteResult.error);
+            }
+          }
+          console.log('✅ Payment allocations deleted');
+        }
+
+        // Step 3: Finally, delete the invoice itself
+        console.log('🗑️ Deleting invoice...');
+        const deleteResult = await apiClient.delete('invoices', invoiceId);
+
+        if (deleteResult.error) {
+          console.error('❌ Error deleting invoice:', deleteResult.error);
+          throw deleteResult.error;
+        }
+
+        console.log('✅ Invoice deleted successfully');
+        return { success: true, invoiceId };
       } catch (error) {
-        console.error('Error deleting invoice:', error);
+        console.error('❌ Error deleting invoice:', error);
         throw error;
       }
     },
     onSuccess: () => {
+      console.log('🎉 Invalidating invoices cache');
       queryClient.invalidateQueries({ queryKey: ['invoices_fixed'] });
       toast.success('Invoice deleted successfully!');
     },
     onError: (error) => {
-      console.error('Error deleting invoice:', error);
-      toast.error(`Failed to delete invoice: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error('❌ Invoice deletion error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      toast.error(`Failed to delete invoice: ${errorMessage}`);
     },
   });
 };

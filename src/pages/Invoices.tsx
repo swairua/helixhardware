@@ -259,6 +259,20 @@ export default function Invoices() {
 
   const handleDownloadInvoice = async (invoice: Invoice) => {
     try {
+      // Log invoice data before PDF generation
+      console.log('📥 Invoice Download - Data Debug:', {
+        invoiceNumber: invoice.invoice_number,
+        invoiceId: invoice.id,
+        customerId: invoice.customer_id || (invoice as any).customer_id,
+        hasCustomersProperty: !!(invoice as any).customers,
+        customerName: (invoice as any).customers?.name,
+        invoiceObject: {
+          invoice_number: invoice.invoice_number,
+          customer_id: (invoice as any).customer_id,
+          customers: (invoice as any).customers,
+        }
+      });
+
       // Ensure invoice has items; if not, fetch them on demand
       let enrichedInvoice: any = invoice;
       if (!invoice.invoice_items || invoice.invoice_items.length === 0) {
@@ -299,6 +313,13 @@ export default function Invoices() {
         primary_color: currentCompany.primary_color,
         pdf_template: currentCompany.pdf_template
       } : undefined;
+
+      console.log('📤 Invoice to PDF Generator:', {
+        invoiceNumber: enrichedInvoice.invoice_number,
+        customerId: enrichedInvoice.customer_id,
+        customerName: (enrichedInvoice as any).customers?.name,
+        hasItems: enrichedInvoice.invoice_items?.length > 0
+      });
 
       await downloadInvoicePDF(enrichedInvoice, 'INVOICE', companyDetails);
       toast.success(`PDF download started for ${invoice.invoice_number}`);

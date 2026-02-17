@@ -321,6 +321,15 @@ export function CreateInvoiceModal({ open, onOpenChange, onSuccess, preSelectedC
     });
 
     try {
+      // Log the selected customer for debugging
+      const selectedCustomer = customers?.find(c => String(c.id) === selectedCustomerId);
+      console.log('🔍 Creating invoice with customer:', {
+        customerId: selectedCustomerId,
+        customerName: selectedCustomer?.name,
+        customerFound: !!selectedCustomer,
+        allCustomers: customers?.map(c => ({ id: c.id, name: c.name }))
+      });
+
       // Step 1: Generate invoice number
       setSubmitProgress({
         step: 'Generating invoice number...',
@@ -461,22 +470,39 @@ export function CreateInvoiceModal({ open, onOpenChange, onSuccess, preSelectedC
                 {/* Customer Selection */}
                 <div className="space-y-2">
                   <Label htmlFor="customer">Customer *</Label>
-                  <Select value={selectedCustomerId || ''} onValueChange={setSelectedCustomerId}>
+                  <Select
+                    value={selectedCustomerId}
+                    onValueChange={(value) => {
+                      console.log('Customer selection changed to:', value);
+                      setSelectedCustomerId(value);
+                    }}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select a customer" />
                     </SelectTrigger>
                     <SelectContent>
                       {loadingCustomers ? (
                         <div className="px-2 py-1.5 text-sm text-muted-foreground">Loading customers...</div>
+                      ) : customers && customers.length === 0 ? (
+                        <div className="px-2 py-1.5 text-sm text-muted-foreground">No customers available</div>
                       ) : (
-                        customers?.map((customer) => (
-                          <SelectItem key={customer.id} value={customer.id}>
-                            {customer.name}{customer.customer_code && ` (${customer.customer_code})`}
-                          </SelectItem>
-                        ))
+                        customers?.map((customer) => {
+                          // Ensure customer ID is a string for consistent matching
+                          const customerId = String(customer.id);
+                          return (
+                            <SelectItem key={customerId} value={customerId}>
+                              {customer.name}{customer.customer_code && ` (${customer.customer_code})`}
+                            </SelectItem>
+                          );
+                        })
                       )}
                     </SelectContent>
                   </Select>
+                  {selectedCustomerId && (
+                    <p className="text-xs text-muted-foreground">
+                      Selected: {customers?.find(c => String(c.id) === selectedCustomerId)?.name || 'Unknown'}
+                    </p>
+                  )}
                 </div>
 
                 {/* Dates */}

@@ -1061,6 +1061,16 @@ export const downloadInvoicePDF = async (invoice: any, documentType: 'INVOICE' |
     };
   });
 
+  // Log customer data for debugging
+  console.log('📄 PDF Generation - Customer Data Debug:', {
+    invoiceNumber: invoice.invoice_number,
+    customersObject: invoice.customers,
+    hasCustomersProperty: !!invoice.customers,
+    customerName: invoice.customers?.name,
+    customerId: invoice.customer_id,
+    invoiceObject: { invoice_number: invoice.invoice_number, customer_id: invoice.customer_id, customers: invoice.customers }
+  });
+
   const documentData: DocumentData = {
     type: docType,
     number: invoice.number || invoice.payment_number || invoice.invoice_number || invoice.receipt_number || `DOC-${Date.now()}`,
@@ -1087,11 +1097,26 @@ export const downloadInvoicePDF = async (invoice: any, documentType: 'INVOICE' |
     terms_and_conditions: invoice.terms_and_conditions,
   };
 
+  console.log('✅ PDF Document Data - Customer:', {
+    name: documentData.customer.name,
+    email: documentData.customer.email,
+    phone: documentData.customer.phone,
+  });
+
   return generatePDF(documentData);
 };
 
 // Function for quotation PDF generation
 export const downloadQuotationPDF = async (quotation: any, company?: CompanyDetails) => {
+  // Log customer data for debugging
+  console.log('📄 PDF Generation - Quotation Customer Data Debug:', {
+    quotationNumber: quotation.quotation_number,
+    customersObject: quotation.customers,
+    hasCustomersProperty: !!quotation.customers,
+    customerName: quotation.customers?.name,
+    customerId: quotation.customer_id,
+  });
+
   const documentData: DocumentData = {
     type: 'quotation',
     number: quotation.quotation_number,

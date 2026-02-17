@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -32,6 +32,7 @@ import {
 import { useCustomers, useProducts, useTaxSettings } from '@/hooks/useDatabase';
 import { useUpdateInvoiceWithItems } from '@/hooks/useQuotationItems';
 import { useCurrentCompany } from '@/contexts/CompanyContext';
+import { getDatabase } from '@/integrations/database';
 import { toast } from 'sonner';
 
 interface InvoiceItem {
@@ -81,6 +82,22 @@ export function EditInvoiceModal({ open, onOpenChange, onSuccess, invoice }: Edi
   // Load invoice data when modal opens
   useEffect(() => {
     if (invoice && open) {
+      // DEBUG: Log incoming invoice data
+      console.log('📋 EditInvoiceModal - Received invoice:', {
+        invoiceId: invoice.id,
+        invoiceNumber: invoice.invoice_number,
+        hasInvoiceItems: !!invoice.invoice_items,
+        invoiceItemsCount: invoice.invoice_items?.length || 0,
+        invoiceItemsData: invoice.invoice_items,
+        invoiceMetadata: {
+          customer_id: invoice.customer_id,
+          subtotal: invoice.subtotal,
+          tax_amount: invoice.tax_amount,
+          total_amount: invoice.total_amount,
+          balance_due: invoice.balance_due
+        }
+      });
+
       setSelectedCustomerId(invoice.customer_id || '');
       setInvoiceDate(invoice.invoice_date || '');
       setDueDate(invoice.due_date || '');
@@ -103,10 +120,83 @@ export function EditInvoiceModal({ open, onOpenChange, onSuccess, invoice }: Edi
         tax_inclusive: item.tax_inclusive || false,
         line_total: item.line_total || 0,
       }));
-      
+
+      // DEBUG: Log after mapping
+      console.log('📋 EditInvoiceModal - Mapped items:', {
+        mappedItemsCount: invoiceItems.length,
+        mappedItems: invoiceItems
+      });
+
       setItems(invoiceItems);
     }
   }, [invoice, open]);
+
+  // Fallback: If invoice has amounts but no items loaded, fetch them directly from invoice_items table
+  const hasFallbackFetched = useRef(false);
+  useEffect(() => {
+    const fetchMissingItems = async () => {
+      // Check if we need fallback: invoice exists, has amounts, but items weren't loaded
+      if (
+        invoice?.id &&
+        open &&
+        (invoice.total_amount > 0 || invoice.subtotal > 0) &&
+        (!invoice.invoice_items || invoice.invoice_items.length === 0) &&
+        !hasFallbackFetched.current
+      ) {
+        console.log('🔄 Fallback fetch triggered - Fetching invoice_items directly from DB', {
+          invoiceId: invoice.id,
+          invoiceNumber: invoice.invoice_number
+        });
+
+        try {
+          const db = getDatabase();
+          const itemsResult = await db.selectBy('invoice_items', { invoice_id: invoice.id });
+
+          if (itemsResult.error) {
+            console.error('❌ Fallback fetch error:', itemsResult.error);
+            return;
+          }
+
+          const items = itemsResult.data || [];
+
+          if (items && items.length > 0) {
+            console.log('✅ Fallback fetch successful - Found items:', {
+              count: items.length,
+              items: items
+            });
+
+            // Map the fetched items to local format
+            const mappedItems: InvoiceItem[] = items.map((item: any, index: number) => ({
+              id: item.id,
+              product_id: item.product_id || '',
+              product_name: item.product_name || 'Unknown Product',
+              description: item.description || '',
+              quantity: item.quantity || 0,
+              unit_price: item.unit_price || 0,
+              discount_percentage: item.discount_percentage || 0,
+              discount_before_vat: item.discount_before_vat || 0,
+              tax_percentage: item.tax_percentage || 16,
+              tax_amount: item.tax_amount || 0,
+              tax_inclusive: item.tax_inclusive || false,
+              line_total: item.line_total || 0,
+            }));
+
+            setItems(mappedItems);
+          } else {
+            console.warn('⚠️ Fallback fetch: No items found in database', {
+              invoiceId: invoice.id
+            });
+          }
+
+          hasFallbackFetched.current = true;
+        } catch (error) {
+          console.error('❌ Fallback fetch exception:', error);
+        }
+      }
+    };
+
+    fetchMissingItems();
+  }, [invoice?.id, open, invoice?.total_amount, invoice?.subtotal, invoice?.invoice_items]);
 
   const filteredProducts = products?.filter(product =>
     product.name.toLowerCase().includes(searchProduct.toLowerCase()) ||
@@ -384,9 +474,10 @@ export function EditInvoiceModal({ open, onOpenChange, onSuccess, invoice }: Edi
                         customers?.map((customer) => {
                           // Ensure customer ID is a string for consistent matching
                           const customerId = String(customer.id);
+                          const displayName = customer.customer_code ? `${customer.name} (${customer.customer_code})` : customer.name;
                           return (
                             <SelectItem key={customerId} value={customerId}>
-                              {customer.name} ({customer.customer_code})
+                              {displayName}
                             </SelectItem>
                           );
                         })

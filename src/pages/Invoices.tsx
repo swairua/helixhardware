@@ -51,7 +51,7 @@ import { RecordPaymentModal } from '@/components/payments/RecordPaymentModal';
 import { CreateDeliveryNoteModal } from '@/components/delivery/CreateDeliveryNoteModal';
 import { downloadInvoicePDF } from '@/utils/pdfGenerator';
 import { reconcileAllInvoiceBalances } from '@/utils/balanceReconciliation';
-import { supabase } from '@/integrations/supabase/client';
+import { getDatabase } from '@/integrations/database';
 
 interface Invoice {
   id: string;
@@ -217,39 +217,60 @@ export default function Invoices() {
 
   const handleEditInvoice = async (invoice: Invoice) => {
     try {
-      // Fetch full invoice with items and product details
-      const { data, error } = await supabase
-        .from('invoices')
-        .select(`
-          *,
-          customers (
-            id,
-            name,
-            email,
-            phone,
-            address
-          ),
-          invoice_items (
-            id,
-            product_id,
-            products (
-              name
-            ),
-            description,
-            quantity,
-            unit_price,
-            discount_percentage,
-            tax_percentage,
-            tax_amount,
-            tax_inclusive,
-            line_total
-          )
-        `)
-        .eq('id', invoice.id)
-        .single();
+      const db = getDatabase();
 
-      if (error) throw error;
-      setSelectedInvoice(data as Invoice);
+      // Fetch invoice
+      const invoiceResult = await db.selectOne('invoices', invoice.id);
+      if (invoiceResult.error) throw invoiceResult.error;
+      if (!invoiceResult.data) throw new Error('Invoice not found');
+
+      const invoiceData = invoiceResult.data as any;
+
+      // Fetch invoice items
+      const itemsResult = await db.selectBy('invoice_items', { invoice_id: invoice.id });
+      if (itemsResult.error) console.warn('Warning: Could not fetch invoice items');
+
+      // Fetch customer info
+      const customerResult = await db.selectOne('customers', invoiceData.customer_id);
+      if (customerResult.error) console.warn('Warning: Could not fetch customer');
+
+      // Construct the full invoice object with related data
+      const fullInvoice = {
+        ...invoiceData,
+        customers: customerResult.data,
+        invoice_items: (itemsResult.data || []).map((item: any) => ({
+          ...item,
+          products: { name: item.product_name }
+        }))
+      };
+
+      // DEBUG: Log the response
+      console.log('🔍 handleEditInvoice - Full API Response:', {
+        invoiceId: invoice.id,
+        invoiceNumber: fullInvoice.invoice_number,
+        fullData: fullInvoice,
+        invoiceItems: fullInvoice.invoice_items,
+        itemsCount: fullInvoice.invoice_items?.length || 0,
+        invoiceMetadata: {
+          subtotal: fullInvoice.subtotal,
+          tax_amount: fullInvoice.tax_amount,
+          total_amount: fullInvoice.total_amount,
+          balance_due: fullInvoice.balance_due
+        }
+      });
+
+      // Additional debug: Check if items exist in DB by checking totals
+      if (fullInvoice.total_amount > 0 && (!fullInvoice.invoice_items || fullInvoice.invoice_items.length === 0)) {
+        console.warn('⚠️ MISMATCH DETECTED: Invoice has amounts but no items loaded', {
+          invoiceId: fullInvoice.id,
+          hasAmount: fullInvoice.total_amount > 0,
+          itemsLoaded: fullInvoice.invoice_items?.length || 0,
+          subtotal: fullInvoice.subtotal,
+          tax_amount: fullInvoice.tax_amount
+        });
+      }
+
+      setSelectedInvoice(fullInvoice as Invoice);
       setShowEditModal(true);
     } catch (error) {
       console.error('Error fetching invoice data:', error);
@@ -259,6 +280,8 @@ export default function Invoices() {
 
   const handleDownloadInvoice = async (invoice: Invoice) => {
     try {
+      const db = getDatabase();
+
       // Log invoice data before PDF generation
       console.log('📥 Invoice Download - Data Debug:', {
         invoiceNumber: invoice.invoice_number,
@@ -266,37 +289,14 @@ export default function Invoices() {
         customerId: invoice.customer_id || (invoice as any).customer_id,
         hasCustomersProperty: !!(invoice as any).customers,
         customerName: (invoice as any).customers?.name,
-        invoiceObject: {
-          invoice_number: invoice.invoice_number,
-          customer_id: (invoice as any).customer_id,
-          customers: (invoice as any).customers,
-        }
       });
 
       // Ensure invoice has items; if not, fetch them on demand
       let enrichedInvoice: any = invoice;
       if (!invoice.invoice_items || invoice.invoice_items.length === 0) {
-        const { data: items, error } = await supabase
-          .from('invoice_items')
-          .select(`
-            id,
-            invoice_id,
-            product_id,
-            description,
-            quantity,
-            unit_price,
-            discount_percentage,
-            discount_before_vat,
-            tax_percentage,
-            tax_amount,
-            tax_inclusive,
-            line_total,
-            sort_order,
-            products(id, name, product_code, unit_of_measure)
-          `)
-          .eq('invoice_id', invoice.id);
-        if (!error && items) {
-          enrichedInvoice = { ...invoice, invoice_items: items };
+        const itemsResult = await db.selectBy('invoice_items', { invoice_id: invoice.id });
+        if (!itemsResult.error && itemsResult.data && itemsResult.data.length > 0) {
+          enrichedInvoice = { ...invoice, invoice_items: itemsResult.data };
         }
       }
 

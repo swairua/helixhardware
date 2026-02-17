@@ -379,6 +379,14 @@ export function CreateInvoiceModal({ open, onOpenChange, onSuccess, preSelectedC
         line_total: item.line_total
       }));
 
+      console.log('🛒 CreateInvoiceModal - Prepared items for mutation:', {
+        itemsCount: items.length,
+        itemsInState: items,
+        mappedItems: invoiceItems,
+        firstItem: invoiceItems[0],
+        allFieldsPresent: invoiceItems[0] ? Object.keys(invoiceItems[0]) : []
+      });
+
       // Step 3: Create invoice and items
       setSubmitProgress({
         step: `Creating invoice with ${items.length} items...`,

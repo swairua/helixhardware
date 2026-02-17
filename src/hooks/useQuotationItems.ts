@@ -428,8 +428,30 @@ export const useCreateInvoiceWithItems = () => {
           sort_order: index + 1
         }));
 
+        console.log('📌 About to insert invoice items:', {
+          invoiceId: invoiceData.id,
+          itemsCount: items.length,
+          itemsData: invoiceItems,
+          firstItem: invoiceItems[0]
+        });
+
         const itemsInsertResult = await db.insertMany('invoice_items', invoiceItems);
-        if (itemsInsertResult.error) throw itemsInsertResult.error;
+
+        console.log('📌 Invoice items insert result:', {
+          success: !itemsInsertResult.error,
+          error: itemsInsertResult.error,
+          insertedId: itemsInsertResult.id
+        });
+
+        if (itemsInsertResult.error) {
+          console.error('❌ Failed to insert invoice items:', {
+            error: itemsInsertResult.error,
+            message: itemsInsertResult.error?.message,
+            details: itemsInsertResult.error?.details,
+            hint: (itemsInsertResult.error as any)?.hint
+          });
+          throw itemsInsertResult.error;
+        }
 
         // Create stock movements for products that affect inventory
         if (invoice.affects_inventory !== false) {

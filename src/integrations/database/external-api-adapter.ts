@@ -211,8 +211,8 @@ export class ExternalAPIAdapter implements IDatabase {
       const logPrefix = `📡 [${method.toUpperCase()}] ${action}${table ? ` on ${table}` : ''}`;
       console.log(`${logPrefix} - Starting request...`);
 
-      // For update and delete operations, backend expects 'where' parameter
-      if ((action === 'update' || action === 'delete') && where && typeof where === 'object') {
+      // For update, delete, and read operations, backend expects 'where' parameter
+      if ((action === 'update' || action === 'delete' || action === 'read') && where && typeof where === 'object') {
         // Convert where object to SQL WHERE clause format for the backend
         // e.g., {id: 123} becomes id=123
         const whereParts: string[] = [];
@@ -224,6 +224,14 @@ export class ExternalAPIAdapter implements IDatabase {
           }
         });
         params.append('where', whereParts.join(' AND '));
+
+        // DEBUG: Log the where clause being sent for read operations
+        if (action === 'read') {
+          console.log(`📡 [READ] Where clause being sent in URL for ${table}:`, {
+            whereObject: where,
+            whereClause: whereParts.join(' AND ')
+          });
+        }
       }
 
       const url = `${this.apiBase}?${params.toString()}`;
@@ -268,10 +276,8 @@ export class ExternalAPIAdapter implements IDatabase {
       if (data && typeof data === 'object' && Object.keys(data).length > 0) {
         body = data;
       }
-      // For read operations, include where clause in body if not in URL
-      else if ((action === 'read') && where && typeof where === 'object') {
-        body = where;
-      }
+      // For read operations with where clause, it's now in URL params, not in body
+      // This prevents duplicate filtering logic
 
       // Add timeout for fetch requests - extended to 60 seconds for slow APIs
       const controller = new AbortController();

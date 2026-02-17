@@ -250,6 +250,33 @@ export default function Invoices() {
         .single();
 
       if (error) throw error;
+
+      // DEBUG: Log the full response to understand data structure
+      console.log('🔍 handleEditInvoice - Full Supabase Response:', {
+        invoiceId: invoice.id,
+        invoiceNumber: data?.invoice_number,
+        fullData: data,
+        invoiceItems: data?.invoice_items,
+        itemsCount: data?.invoice_items?.length || 0,
+        invoiceMetadata: {
+          subtotal: data?.subtotal,
+          tax_amount: data?.tax_amount,
+          total_amount: data?.total_amount,
+          balance_due: data?.balance_due
+        }
+      });
+
+      // Additional debug: Check if items exist in DB by checking totals
+      if (data?.total_amount > 0 && (!data?.invoice_items || data.invoice_items.length === 0)) {
+        console.warn('⚠️ MISMATCH DETECTED: Invoice has amounts but no items loaded', {
+          invoiceId: data.id,
+          hasAmount: data.total_amount > 0,
+          itemsLoaded: data?.invoice_items?.length || 0,
+          subtotal: data?.subtotal,
+          tax_amount: data?.tax_amount
+        });
+      }
+
       setSelectedInvoice(data as Invoice);
       setShowEditModal(true);
     } catch (error) {

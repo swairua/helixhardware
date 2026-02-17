@@ -615,7 +615,7 @@ export class ExternalAPIAdapter implements IDatabase {
             console.debug('Controller abort error (ignored):', e);
           }
         }
-      }, 10000); // 10 second timeout
+      }, 30000); // 30 second timeout (increased from 10s to handle slow networks)
 
       try {
         const response = await fetch(`${this.apiBase}?action=check_auth`, {

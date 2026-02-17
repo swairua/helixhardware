@@ -239,6 +239,7 @@ export default function Invoices() {
             quantity,
             unit_price,
             discount_percentage,
+            discount_before_vat,
             tax_percentage,
             tax_amount,
             tax_inclusive,

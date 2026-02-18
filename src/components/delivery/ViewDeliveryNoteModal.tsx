@@ -24,8 +24,10 @@ import {
   MapPin,
   CheckCircle,
   Clock,
-  AlertTriangle
+  AlertTriangle,
+  Trash2
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface DeliveryItem {
   id: string;
@@ -76,6 +78,7 @@ export const ViewDeliveryNoteModal = ({
 }: ViewDeliveryNoteModalProps) => {
   const [deliveryItems, setDeliveryItems] = useState<DeliveryItem[]>([]);
   const [itemsLoading, setItemsLoading] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const { db } = useDatabase();
 
   // Fetch delivery note items when modal opens with a delivery note
@@ -173,6 +176,43 @@ export const ViewDeliveryNoteModal = ({
 
   const handleMarkDelivered = () => {
     onMarkDelivered?.(deliveryNote);
+  };
+
+  const handleDeleteItem = async (itemId: string, itemName: string) => {
+    if (!deliveryNote?.id) return;
+
+    try {
+      setIsDeleting(true);
+      const response = await fetch('/api.php', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('med_api_token') || ''}`
+        },
+        body: JSON.stringify({
+          action: 'delete',
+          table: 'delivery_note_items',
+          where: { id: itemId }
+        })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.status === 'success') {
+          setDeliveryItems(prev => prev.filter(item => item.id !== itemId));
+          toast.success(`Deleted ${itemName} from delivery note`);
+        } else {
+          toast.error('Failed to delete item: ' + (result.message || 'Unknown error'));
+        }
+      } else {
+        toast.error('Failed to delete item');
+      }
+    } catch (error) {
+      console.error('Error deleting delivery item:', error);
+      toast.error('Error deleting item');
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const totalItemsOrdered = itemsToDisplay?.reduce((sum, item) => sum + item.quantity_ordered, 0) || 0;
@@ -324,6 +364,7 @@ export const ViewDeliveryNoteModal = ({
                       <TableHead>Delivered</TableHead>
                       <TableHead>Unit</TableHead>
                       <TableHead>Status</TableHead>
+                      {mappedDeliveryNote.status === 'draft' && <TableHead></TableHead>}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -361,6 +402,19 @@ export const ViewDeliveryNoteModal = ({
                               </Badge>
                             )}
                           </TableCell>
+                          {mappedDeliveryNote.status === 'draft' && (
+                            <TableCell>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDeleteItem(item.id, item.product_name)}
+                                disabled={isDeleting}
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </TableCell>
+                          )}
                         </TableRow>
                       );
                     })}

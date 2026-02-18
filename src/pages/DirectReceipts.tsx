@@ -392,6 +392,7 @@ export default function DirectReceipts() {
     if (!receiptToDelete) return;
 
     setIsDeleting(true);
+    console.log('🗑️ [FRONTEND] ===== START DELETE RECEIPT CONFIRMATION =====');
     try {
       // Use transaction-safe deletion endpoint for atomic operation
       const token = localStorage.getItem('med_api_token');
@@ -399,13 +400,17 @@ export default function DirectReceipts() {
         receipt_id: receiptToDelete.id
       };
 
-      console.log('📤 Receipt deletion request:', {
+      console.log('🗑️ [FRONTEND] Receipt deletion request:', {
         receiptId: receiptToDelete.id,
         receiptIdType: typeof receiptToDelete.id,
         receiptNumber: receiptToDelete.receipt_number,
-        token: token ? '***present***' : '***missing***'
+        invoiceId: receiptToDelete.invoice_id,
+        paymentId: receiptToDelete.payment_id,
+        token: token ? '***present***' : '***missing***',
+        requestBody: requestBody
       });
 
+      console.log('🗑️ [FRONTEND] Sending DELETE request to /api?action=delete_receipt_with_cascade');
       const response = await fetch('/api?action=delete_receipt_with_cascade', {
         method: 'POST',
         headers: {
@@ -415,46 +420,79 @@ export default function DirectReceipts() {
         body: JSON.stringify(requestBody)
       });
 
-      console.log('📨 Response status:', response.status, response.statusText);
+      console.log('🗑️ [FRONTEND] Response received:', {
+        status: response.status,
+        statusText: response.statusText,
+        headers: {
+          contentType: response.headers.get('content-type'),
+          contentLength: response.headers.get('content-length')
+        }
+      });
 
       // Check if response has content
       const responseText = await response.text();
-      console.log('📋 Response body:', responseText);
+      console.log('🗑️ [FRONTEND] Response body length:', responseText.length);
+      console.log('🗑️ [FRONTEND] Response body (first 500 chars):', responseText.substring(0, 500));
 
       if (!response.ok) {
+        console.error('🗑️ [FRONTEND] Response not OK, attempting to parse error:', {
+          statusCode: response.status,
+          statusText: response.statusText,
+          bodyLength: responseText.length,
+          bodyPreview: responseText.substring(0, 200)
+        });
         try {
           const errorData = JSON.parse(responseText);
+          console.error('🗑️ [FRONTEND] Parsed error data:', errorData);
           throw new Error(errorData.message || 'Failed to delete receipt');
-        } catch {
+        } catch (parseErr) {
+          console.error('🗑️ [FRONTEND] Failed to parse error response:', parseErr);
           throw new Error(`HTTP ${response.status}: ${responseText || 'Empty response'}`);
         }
       }
 
       if (!responseText) {
+        console.error('🗑️ [FRONTEND] Empty response from server');
         throw new Error('Empty response from server');
       }
 
+      console.log('🗑️ [FRONTEND] Parsing success response...');
       const result = JSON.parse(responseText);
+      console.log('🗑️ [FRONTEND] Parsed response:', result);
 
       if (result.status !== 'success') {
+        console.error('🗑️ [FRONTEND] Response status is not success:', {
+          status: result.status,
+          message: result.message
+        });
         throw new Error(result.message || 'Failed to delete receipt');
       }
+
+      console.log('✅ [FRONTEND] Deletion successful, updating local state');
 
       // Remove from local state
       setReceipts(receipts.filter(r => r.id !== receiptToDelete.id));
 
+      console.log('✅ [FRONTEND] Local state updated, showing success toast');
       toast.success(`Receipt ${receiptToDelete.receipt_number} and all related records deleted successfully`);
       setShowDeleteConfirm(false);
       setReceiptToDelete(null);
 
+      console.log('✅ [FRONTEND] Refreshing receipts list...');
       // Refresh the receipts list to ensure consistency
       setTimeout(() => {
+        console.log('✅ [FRONTEND] Executing fetchDirectReceipts refresh');
         fetchDirectReceipts();
       }, 500);
+
+      console.log('✅ [FRONTEND] ===== DELETE RECEIPT COMPLETED SUCCESSFULLY =====');
     } catch (err) {
-      console.error('Error deleting receipt:', err);
+      console.error('🔴 [FRONTEND] Error deleting receipt:', err);
+      console.error('🔴 [FRONTEND] Error stack:', err instanceof Error ? err.stack : 'N/A');
       const errorMessage = err instanceof Error ? err.message : 'Failed to delete receipt';
+      console.error('🔴 [FRONTEND] Displaying error toast:', errorMessage);
       toast.error(errorMessage);
+      console.log('🔴 [FRONTEND] ===== DELETE RECEIPT FAILED =====');
     } finally {
       setIsDeleting(false);
     }

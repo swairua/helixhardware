@@ -17,6 +17,7 @@ export function AdminInventoryPermissionFix() {
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
+  const [dismissed, setDismissed] = useState(false);
 
   // Check admin permission on mount
   useEffect(() => {
@@ -81,7 +82,7 @@ export function AdminInventoryPermissionFix() {
   };
 
   // Only show if user is admin and permission is missing
-  if (profile?.role !== 'admin' || hasPermission === null) {
+  if (profile?.role !== 'admin' || hasPermission === null || dismissed) {
     return null;
   }
 
@@ -122,42 +123,60 @@ export function AdminInventoryPermissionFix() {
 
           <div className="flex gap-2 pt-2">
             {error && isTimeoutError && retryCount < 2 ? (
-              <Button
-                onClick={handleRetry}
-                disabled={fixing}
-                className="flex-1"
-                variant="default"
-              >
-                {fixing ? (
-                  <>
-                    <Loader className="h-4 w-4 mr-2 animate-spin" />
-                    Retrying... (Attempt {retryCount + 1})
-                  </>
-                ) : (
-                  <>
-                    <RefreshCw className="h-4 w-4 mr-2" />
-                    Retry Fix
-                  </>
-                )}
-              </Button>
+              <>
+                <Button
+                  onClick={handleRetry}
+                  disabled={fixing}
+                  className="flex-1"
+                  variant="default"
+                >
+                  {fixing ? (
+                    <>
+                      <Loader className="h-4 w-4 mr-2 animate-spin" />
+                      Retrying... (Attempt {retryCount + 1})
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      Retry Fix
+                    </>
+                  )}
+                </Button>
+                <Button
+                  onClick={() => setDismissed(true)}
+                  disabled={fixing}
+                  variant="outline"
+                >
+                  Skip for now
+                </Button>
+              </>
             ) : (
-              <Button
-                onClick={handleFixPermissions}
-                disabled={fixing || checking}
-                className="flex-1"
-              >
-                {fixing ? (
-                  <>
-                    <Loader className="h-4 w-4 mr-2 animate-spin" />
-                    Fixing...
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle className="h-4 w-4 mr-2" />
-                    Fix Permissions
-                  </>
-                )}
-              </Button>
+              <>
+                <Button
+                  onClick={handleFixPermissions}
+                  disabled={fixing || checking}
+                  className="flex-1"
+                >
+                  {fixing ? (
+                    <>
+                      <Loader className="h-4 w-4 mr-2 animate-spin" />
+                      Fixing...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Fix Permissions
+                    </>
+                  )}
+                </Button>
+                <Button
+                  onClick={() => setDismissed(true)}
+                  disabled={fixing}
+                  variant="outline"
+                >
+                  Skip for now
+                </Button>
+              </>
             )}
           </div>
 

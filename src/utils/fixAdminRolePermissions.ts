@@ -20,13 +20,20 @@ export interface FixRolePermissionsResult {
 async function retryWithBackoff<T>(
   fn: () => Promise<T>,
   maxAttempts: number = 3,
-  baseDelay: number = 1000
+  baseDelay: number = 1000,
+  timeout: number = 10000
 ): Promise<T> {
   let lastError: Error | null = null;
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
-      return await fn();
+      // Add timeout wrapper
+      return await Promise.race([
+        fn(),
+        new Promise<T>((_, reject) =>
+          setTimeout(() => reject(new Error('Request timeout')), timeout)
+        )
+      ]);
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));
 
@@ -50,8 +57,11 @@ async function retryWithBackoff<T>(
  */
 export async function fixAdminRolePermissions(companyId: string): Promise<FixRolePermissionsResult> {
   try {
+    console.log(`[Permission Fix] Starting fix for company: ${companyId}`);
+
     // Fetch with retry logic to handle timeouts
     const adminRole = await retryWithBackoff(async () => {
+      console.log('[Permission Fix] Fetching admin role...');
       const { data, error } = await supabase
         .from('roles')
         .select('*')
@@ -63,10 +73,12 @@ export async function fixAdminRolePermissions(companyId: string): Promise<FixRol
         throw error;
       }
 
+      console.log('[Permission Fix] Admin role fetched:', data?.id);
       return data;
-    });
+    }, 3, 1000, 15000);
 
     if (!adminRole) {
+      console.warn('[Permission Fix] Admin role not found');
       return {
         success: false,
         message: 'Admin role not found in database',
@@ -87,12 +99,18 @@ export async function fixAdminRolePermissions(companyId: string): Promise<FixRol
       }
     }
 
+    console.log('[Permission Fix] Current permissions count:', currentPermissions.length);
+    console.log('[Permission Fix] Required permissions count:', defaultPermissions.length);
+
     // Find missing permissions
     const missingPermissions = defaultPermissions.filter(
       (perm) => !currentPermissions.includes(perm)
     );
 
+    console.log('[Permission Fix] Missing permissions:', missingPermissions);
+
     if (missingPermissions.length === 0) {
+      console.log('[Permission Fix] Admin role already has all permissions');
       return {
         success: true,
         message: 'Admin role already has all permissions',
@@ -102,6 +120,7 @@ export async function fixAdminRolePermissions(companyId: string): Promise<FixRol
     }
 
     // Add missing permissions with retry logic
+    console.log(`[Permission Fix] Updating role with ${missingPermissions.length} new permissions...`);
     const updatedRole = await retryWithBackoff(async () => {
       const { data, error } = await supabase
         .from('roles')
@@ -117,9 +136,11 @@ export async function fixAdminRolePermissions(companyId: string): Promise<FixRol
         throw error;
       }
 
+      console.log('[Permission Fix] Role updated successfully:', data?.id);
       return data;
-    });
+    }, 3, 1000, 15000);
 
+    console.log('[Permission Fix] Permission fix completed successfully');
     return {
       success: true,
       message: `Successfully added ${missingPermissions.length} missing permissions to admin role`,
@@ -128,6 +149,7 @@ export async function fixAdminRolePermissions(companyId: string): Promise<FixRol
     };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error('[Permission Fix] Error:', errorMessage);
 
     // Provide helpful guidance for timeout errors
     let userMessage = 'Unexpected error while fixing admin role permissions';
@@ -152,6 +174,8 @@ export async function checkAdminInventoryPermission(companyId: string): Promise<
   error?: string;
 }> {
   try {
+    console.log('[Permission Check] Checking admin inventory permission for company:', companyId);
+
     // Fetch with retry logic
     const adminRole = await retryWithBackoff(async () => {
       const { data, error } = await supabase
@@ -166,9 +190,10 @@ export async function checkAdminInventoryPermission(companyId: string): Promise<
       }
 
       return data;
-    });
+    }, 3, 1000, 15000);
 
     if (!adminRole) {
+      console.warn('[Permission Check] Admin role not found');
       return {
         hasPermission: false,
         role: null,
@@ -186,6 +211,7 @@ export async function checkAdminInventoryPermission(companyId: string): Promise<
     }
 
     const hasPermission = Array.isArray(permissions) && permissions.includes('view_inventory');
+    console.log('[Permission Check] Has view_inventory permission:', hasPermission);
 
     return {
       hasPermission,
@@ -193,6 +219,7 @@ export async function checkAdminInventoryPermission(companyId: string): Promise<
     };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error('[Permission Check] Error:', errorMessage);
     return {
       hasPermission: false,
       role: null,

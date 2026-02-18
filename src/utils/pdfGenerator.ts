@@ -759,13 +759,6 @@ export const generatePDF = (data: DocumentData, downloadAsFile: boolean = true) 
         ` : ''}
 
 
-        <!-- Bank Details (invoice only) -->
-        ${data.type === 'invoice' ? `
-        <div class="bank-details">
-          <div class="section-subtitle">Banking Details</div>
-          <div class="notes-content">Account Name: HELIX GENERAL HARDWARE • Please contact info@helixgeneralhardware.com for banking details</div>
-        </div>
-        ` : ''}
 
         <!-- Footer -->
         <div class="footer">

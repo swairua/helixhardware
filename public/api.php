@@ -41,16 +41,35 @@ set_error_handler(function($errno, $errstr, $errfile, $errline) {
 set_exception_handler(function($exception) {
     error_log("🔴 [EXCEPTION_HANDLER] Uncaught Exception: " . $exception->getMessage() . " in " . $exception->getFile() . ":" . $exception->getLine());
     error_log("🔴 [EXCEPTION_HANDLER] Stack trace: " . $exception->getTraceAsString());
-    @ob_clean(); // Clear any accidental output (suppress warnings)
-    http_response_code(500);
-    header('Content-Type: application/json; charset=utf-8');
 
-    $error_response = [
-        'status' => 'error',
-        'message' => 'An unexpected error occurred: ' . $exception->getMessage()
-    ];
+    try {
+        if (!headers_sent()) {
+            ob_clean();
+            http_response_code(500);
+            header('Content-Type: application/json; charset=utf-8');
+        }
 
-    echo json_encode($error_response);
+        $error_message = $exception->getMessage();
+        if (empty($error_message)) {
+            $error_message = 'An unexpected error occurred';
+        }
+
+        $error_response = [
+            'status' => 'error',
+            'message' => 'An unexpected error occurred: ' . $error_message
+        ];
+
+        $json_output = json_encode($error_response);
+        if ($json_output === false) {
+            echo '{"status":"error","message":"An unexpected error occurred"}';
+        } else {
+            echo $json_output;
+        }
+    } catch (Exception $e) {
+        // Last resort fallback
+        error_log("🔴 [EXCEPTION_HANDLER] Failed to output error response: " . $e->getMessage());
+        echo '{"status":"error","message":"An unexpected error occurred"}';
+    }
     exit();
 });
 
@@ -59,17 +78,35 @@ register_shutdown_function(function() {
     $error = error_get_last();
     if ($error && ($error['type'] === E_ERROR || $error['type'] === E_PARSE || $error['type'] === E_CORE_ERROR || $error['type'] === E_COMPILE_ERROR)) {
         error_log("🔴 [SHUTDOWN_HANDLER] Fatal error caught: " . $error['message'] . " in " . $error['file'] . ":" . $error['line']);
-        // Clear any buffered output to ensure clean JSON response
-        @ob_clean();
-        http_response_code(500);
-        header('Content-Type: application/json; charset=utf-8');
 
-        $error_response = [
-            'status' => 'error',
-            'message' => 'A fatal error occurred: ' . $error['message']
-        ];
+        try {
+            // Clear any buffered output to ensure clean JSON response
+            if (!headers_sent()) {
+                ob_clean();
+                http_response_code(500);
+                header('Content-Type: application/json; charset=utf-8');
+            }
 
-        echo json_encode($error_response);
+            $error_message = $error['message'];
+            if (empty($error_message)) {
+                $error_message = 'A fatal error occurred';
+            }
+
+            $error_response = [
+                'status' => 'error',
+                'message' => 'A fatal error occurred: ' . $error_message
+            ];
+
+            $json_output = json_encode($error_response);
+            if ($json_output === false) {
+                echo '{"status":"error","message":"A fatal error occurred"}';
+            } else {
+                echo $json_output;
+            }
+        } catch (Exception $e) {
+            error_log("🔴 [SHUTDOWN_HANDLER] Failed to output error response: " . $e->getMessage());
+            echo '{"status":"error","message":"A fatal error occurred"}';
+        }
     }
 });
 
@@ -2635,11 +2672,13 @@ try {
                 throw new Exception("Failed to commit transaction: " . $conn->error);
             }
 
-    
-            // Return success response
-            @ob_clean(); // Clear any accidental output (suppress any warnings)
-            http_response_code(200);
-            header('Content-Type: application/json; charset=utf-8');
+
+            // Return success response - MUST ensure JSON is output
+            if (!headers_sent()) {
+                ob_clean();
+                http_response_code(200);
+                header('Content-Type: application/json; charset=utf-8');
+            }
 
             $response_data = [
                 'status' => 'success',
@@ -2653,7 +2692,14 @@ try {
                 ]
             ];
 
-            echo json_encode($response_data);
+            $json_output = json_encode($response_data);
+            if ($json_output === false) {
+                // json_encode failed, output minimal success response
+                echo '{"status":"success","message":"Receipt deleted successfully"}';
+                error_log("🔴 [DELETE_RECEIPT_CASCADE] Warning: json_encode failed for success response");
+            } else {
+                echo $json_output;
+            }
             exit();
 
         } catch (Exception $e) {
@@ -2665,8 +2711,10 @@ try {
             // Safely attempt rollback
             if ($conn && is_object($conn)) {
                 try {
-                    $conn->rollback();
-                    error_log("🔴 [DELETE_RECEIPT_CASCADE] Transaction rolled back");
+                    if ($conn->in_transaction()) {
+                        $conn->rollback();
+                        error_log("🔴 [DELETE_RECEIPT_CASCADE] Transaction rolled back");
+                    }
                 } catch (Exception $rollbackErr) {
                     error_log("🔴 [DELETE_RECEIPT_CASCADE] Rollback failed: " . $rollbackErr->getMessage());
                 }
@@ -2674,22 +2722,37 @@ try {
 
             error_log("🔴 [DELETE_RECEIPT_CASCADE] ===== FAILED - Receipt deletion transaction failed: " . $e->getMessage() . " =====");
 
-            // Safely output error response
+            // Safely output error response - MUST ensure JSON is output
+            // Start fresh with error handling
+            $error_message = $e->getMessage();
+            if (empty($error_message)) {
+                $error_message = 'An unknown error occurred during receipt deletion';
+            }
+
             try {
-                @ob_clean(); // Clear any accidental output (suppress warnings)
-                http_response_code(400);
-                header('Content-Type: application/json; charset=utf-8');
+                // Only clear output if we haven't sent headers yet
+                if (!headers_sent()) {
+                    ob_clean();
+                    http_response_code(400);
+                    header('Content-Type: application/json; charset=utf-8');
+                }
 
                 $error_response = [
                     'status' => 'error',
-                    'message' => 'Receipt deletion failed: ' . $e->getMessage()
+                    'message' => 'Receipt deletion failed: ' . $error_message
                 ];
 
-                echo json_encode($error_response);
+                $json_output = json_encode($error_response);
+                if ($json_output === false) {
+                    // json_encode failed, use safe fallback
+                    echo '{"status":"error","message":"Receipt deletion failed due to an encoding error"}';
+                } else {
+                    echo $json_output;
+                }
             } catch (Exception $outputErr) {
                 error_log("🔴 [DELETE_RECEIPT_CASCADE] Failed to output error response: " . $outputErr->getMessage());
-                // As a last resort, output plain text error
-                echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+                // As a last resort, output safe error message
+                echo '{"status":"error","message":"Receipt deletion failed"}';
             }
             exit();
         }
@@ -2717,19 +2780,33 @@ try {
     }
 
     try {
-        @ob_clean(); // Clear any accidental output (suppress warnings)
-        header('Content-Type: application/json; charset=utf-8');
+        // Only clear output and set headers if they haven't been sent
+        if (!headers_sent()) {
+            ob_clean();
+            header('Content-Type: application/json; charset=utf-8');
+        }
+
+        $error_message = $e->getMessage();
+        if (empty($error_message)) {
+            $error_message = 'An unexpected error occurred';
+        }
 
         $error_response = [
             'status' => 'error',
-            'message' => $e->getMessage()
+            'message' => $error_message
         ];
 
-        echo json_encode($error_response);
+        $json_output = json_encode($error_response);
+        if ($json_output === false) {
+            // json_encode failed, output safe fallback
+            echo '{"status":"error","message":"An error occurred"}';
+        } else {
+            echo $json_output;
+        }
     } catch (Exception $outputErr) {
         error_log("🔴 Failed to output error JSON: " . $outputErr->getMessage());
-        // As fallback, output JSON anyway
-        echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+        // As fallback, output safe JSON without complex error data
+        echo '{"status":"error","message":"An error occurred"}';
     }
 
 }

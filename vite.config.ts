@@ -40,33 +40,30 @@ export default defineConfig(({ mode }) => {
       proxy: {
         // ===== CRITICAL: Proxy /api.php requests (document number generation, etc.) =====
         // Document numbering and other API calls go directly to /api.php
-        // Only proxy if external API URL is configured, otherwise let it through to backend
-        ...(apiUrl ? {
-          '/api.php': {
-            target: apiUrl,
-            changeOrigin: true,
-            rewrite: (path) => {
-              // Keep /api.php as-is, just forward to backend
-              return path;
-            },
-            secure: false,
-            configure: (proxy, options) => {
-              proxy.on('proxyReq', (proxyReq, req, res) => {
-                console.log(`📡 [API.PHP] Proxying: ${req.method} ${req.url}`);
-              });
-              proxy.on('proxyRes', (proxyRes, req, res) => {
-                console.log(`✅ [API.PHP] Response: ${proxyRes.statusCode}`);
-              });
-              proxy.on('error', (err, req, res) => {
-                console.error(`❌ [API.PHP] Proxy error: ${err.message}`);
-              });
-            }
+        // ALWAYS active to handle local backend calls
+        '/api.php': {
+          target: apiUrl || 'http://localhost', // Use external API if configured, else local
+          changeOrigin: true,
+          rewrite: (path) => {
+            // Keep /api.php as-is, just forward to backend
+            return path;
+          },
+          secure: false,
+          configure: (proxy, options) => {
+            proxy.on('proxyReq', (proxyReq, req, res) => {
+              console.log(`📡 [API.PHP] Proxying: ${req.method} ${req.url}`);
+            });
+            proxy.on('proxyRes', (proxyRes, req, res) => {
+              console.log(`✅ [API.PHP] Response: ${proxyRes.statusCode}`);
+            });
+            proxy.on('error', (err, req, res) => {
+              console.error(`❌ [API.PHP] Proxy error: ${err.message}`);
+            });
           }
-        } : {}),
+        },
 
         // ===== CRITICAL: Proxy all /proxy routes to bypass CORS =====
         // This acts as a bridge between frontend and backend
-        // Only proxy if external API URL is configured
         ...(apiUrl ? {
           '/proxy': {
             target: apiUrl,
@@ -93,7 +90,6 @@ export default defineConfig(({ mode }) => {
         } : {}),
 
         // File upload requests - forward to main API (preserve path for upload detection)
-        // Only proxy if external API URL is configured
         ...(apiUrl ? {
           '/api/uploads': {
             target: apiUrl,
@@ -103,7 +99,6 @@ export default defineConfig(({ mode }) => {
         } : {}),
 
         // Logo/file upload endpoint
-        // Only proxy if external API URL is configured
         ...(apiUrl ? {
           '/api/upload_file': {
             target: apiUrl,
@@ -127,47 +122,49 @@ export default defineConfig(({ mode }) => {
         } : {}),
 
         // Proxy API requests to external backend or local server
-        // Only proxy if external API URL is configured
-        ...(apiUrl ? {
-          '/api': {
-            target: apiUrl,
-            changeOrigin: true,
-            rewrite: (path) => {
-              // Skip file uploads - keep as /api/uploads
-              if (path.startsWith('/api/uploads')) {
-                return path;
-              }
-              // For query string requests: /api?action=X → /api.php?action=X
-              if (path.includes('?')) {
-                return path.replace('/api?', '/api.php?');
-              }
-              // For path-based requests: /api/upload_file → /api.php/upload_file
-              if (path.startsWith('/api/')) {
-                return '/api.php' + path.substring(4);
-              }
-              // Just /api → /api.php
-              return '/api.php';
-            },
-            configure: (proxy, options) => {
-              proxy.on('proxyReq', (proxyReq, req, res) => {
-                console.log(`📡 Proxying: ${req.method} ${req.url}`);
-
-                // Log authorization header for debugging
-                if (req.headers.authorization) {
-                  console.log(`🔐 Authorization header: ${req.headers.authorization.substring(0, 30)}...`);
-                } else {
-                  console.log(`⚠️  No Authorization header present`);
-                }
-              });
-              proxy.on('proxyRes', (proxyRes, req, res) => {
-                console.log(`✅ Response: ${proxyRes.statusCode}`);
-              });
-              proxy.on('error', (err, req, res) => {
-                console.error(`❌ Proxy error: ${err.message}`);
-              });
-            },
+        // ALWAYS active to handle all /api requests
+        '/api': {
+          target: apiUrl || 'http://localhost', // Use external API if configured, else local
+          changeOrigin: true,
+          rewrite: (path) => {
+            // Skip file uploads - keep as /api/uploads
+            if (path.startsWith('/api/uploads')) {
+              return path;
+            }
+            // For query string requests: /api?action=X → /api.php?action=X
+            if (path.includes('?')) {
+              const rewritten = path.replace('/api?', '/api.php?');
+              console.log(`🔄 Rewrite: ${path} → ${rewritten}`);
+              return rewritten;
+            }
+            // For path-based requests: /api/upload_file → /api.php/upload_file
+            if (path.startsWith('/api/')) {
+              return '/api.php' + path.substring(4);
+            }
+            // Just /api → /api.php
+            return '/api.php';
           },
+          configure: (proxy, options) => {
+            proxy.on('proxyReq', (proxyReq, req, res) => {
+              console.log(`📡 Proxying: ${req.method} ${req.url}`);
 
+              // Log authorization header for debugging
+              if (req.headers.authorization) {
+                console.log(`🔐 Authorization header: ${req.headers.authorization.substring(0, 30)}...`);
+              } else {
+                console.log(`⚠️  No Authorization header present`);
+              }
+            });
+            proxy.on('proxyRes', (proxyRes, req, res) => {
+              console.log(`✅ Response: ${proxyRes.statusCode}`);
+            });
+            proxy.on('error', (err, req, res) => {
+              console.error(`❌ Proxy error: ${err.message}`);
+            });
+          },
+        },
+
+        ...(apiUrl ? {
           '/api/db': {
             target: apiUrl,
             changeOrigin: true,

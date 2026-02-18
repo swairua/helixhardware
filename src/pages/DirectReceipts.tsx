@@ -394,23 +394,47 @@ export default function DirectReceipts() {
     setIsDeleting(true);
     try {
       // Use transaction-safe deletion endpoint for atomic operation
+      const token = localStorage.getItem('med_api_token');
+      const requestBody = {
+        receipt_id: receiptToDelete.id
+      };
+
+      console.log('📤 Receipt deletion request:', {
+        receiptId: receiptToDelete.id,
+        receiptIdType: typeof receiptToDelete.id,
+        receiptNumber: receiptToDelete.receipt_number,
+        token: token ? '***present***' : '***missing***'
+      });
+
       const response = await fetch('/api?action=delete_receipt_with_cascade', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
+          'Authorization': `Bearer ${token || ''}`
         },
-        body: JSON.stringify({
-          receipt_id: receiptToDelete.id
-        })
+        body: JSON.stringify(requestBody)
       });
 
+      console.log('📨 Response status:', response.status, response.statusText);
+
+      // Check if response has content
+      const responseText = await response.text();
+      console.log('📋 Response body:', responseText);
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to delete receipt');
+        try {
+          const errorData = JSON.parse(responseText);
+          throw new Error(errorData.message || 'Failed to delete receipt');
+        } catch {
+          throw new Error(`HTTP ${response.status}: ${responseText || 'Empty response'}`);
+        }
       }
 
-      const result = await response.json();
+      if (!responseText) {
+        throw new Error('Empty response from server');
+      }
+
+      const result = JSON.parse(responseText);
 
       if (result.status !== 'success') {
         throw new Error(result.message || 'Failed to delete receipt');

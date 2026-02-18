@@ -4,13 +4,21 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
 } from '@/components/ui/table';
 import {
   Plus,
@@ -42,6 +50,8 @@ export default function DeliveryNotes() {
   const [showViewModal, setShowViewModal] = useState(false);
   const [selectedDeliveryNote, setSelectedDeliveryNote] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [noteToDelete, setNoteToDelete] = useState<any>(null);
 
   // Database hooks
   const { data: companies } = useCompanies();
@@ -146,10 +156,13 @@ export default function DeliveryNotes() {
     }
   };
 
-  const handleDelete = async (deliveryNote: any) => {
-    if (!confirm(`Are you sure you want to delete delivery note ${deliveryNote.delivery_note_number || deliveryNote.delivery_number}? This action cannot be undone.`)) {
-      return;
-    }
+  const handleDeleteClick = (deliveryNote: any) => {
+    setNoteToDelete(deliveryNote);
+    setDeleteConfirmOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!noteToDelete) return;
 
     try {
       setIsDeleting(true);
@@ -162,16 +175,18 @@ export default function DeliveryNotes() {
         body: JSON.stringify({
           action: 'delete',
           table: 'delivery_notes',
-          where: { id: deliveryNote.id }
+          where: { id: noteToDelete.id }
         })
       });
 
       if (response.ok) {
         const result = await response.json();
         if (result.status === 'success') {
-          const noteNumber = deliveryNote.delivery_note_number || deliveryNote.delivery_number;
+          const noteNumber = noteToDelete.delivery_note_number || noteToDelete.delivery_number;
           toast.success(`Delivery note ${noteNumber} deleted successfully`);
           retryDeliveryNotes();
+          setDeleteConfirmOpen(false);
+          setNoteToDelete(null);
         } else {
           toast.error('Failed to delete delivery note: ' + (result.message || 'Unknown error'));
         }
@@ -184,6 +199,11 @@ export default function DeliveryNotes() {
     } finally {
       setIsDeleting(false);
     }
+  };
+
+  const handleCancelDelete = () => {
+    setDeleteConfirmOpen(false);
+    setNoteToDelete(null);
   };
 
   const handleFilter = () => {
@@ -448,7 +468,7 @@ export default function DeliveryNotes() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleDelete(note)}
+                          onClick={() => handleDeleteClick(note)}
                           disabled={isDeleting}
                         >
                           <Trash2 className="h-4 w-4 text-destructive" />
@@ -478,6 +498,37 @@ export default function DeliveryNotes() {
         onSendEmail={handleSendEmail}
         onMarkDelivered={handleMarkDelivered}
       />
+
+      {/* Delete Confirmation Modal */}
+      <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Delivery Note</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete delivery note <span className="font-semibold">{noteToDelete?.delivery_note_number || noteToDelete?.delivery_number}</span>?
+            </DialogDescription>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            This action cannot be undone. The delivery note and all associated data will be permanently deleted.
+          </p>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={handleCancelDelete}
+              disabled={isDeleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleConfirmDelete}
+              disabled={isDeleting}
+            >
+              {isDeleting ? 'Deleting...' : 'Delete'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

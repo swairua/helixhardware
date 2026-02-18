@@ -12,9 +12,9 @@ import {
   TableHeader, 
   TableRow 
 } from '@/components/ui/table';
-import { 
-  Plus, 
-  Search, 
+import {
+  Plus,
+  Search,
   Filter,
   Eye,
   Edit,
@@ -26,7 +26,8 @@ import {
   CheckCircle,
   Clock,
   AlertTriangle,
-  MapPin
+  MapPin,
+  Trash2
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { downloadDeliveryNotePDF } from '@/utils/pdfGenerator';
@@ -47,6 +48,7 @@ export default function DeliveryNotes() {
   const currentCompany = companies?.[0];
   const { data: deliveryNotes, isLoading, error, retry: retryDeliveryNotes } = useDeliveryNotes(currentCompany?.id);
   const updateDeliveryNote = useUpdateDeliveryNote();
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const mappedDeliveryNotes = deliveryNotes?.map(mapDeliveryNoteForDisplay) || [];
 
@@ -141,6 +143,46 @@ export default function DeliveryNotes() {
     } catch (error) {
       console.error('Error marking delivery note as delivered:', error);
       toast.error('Failed to mark delivery note as delivered');
+    }
+  };
+
+  const handleDelete = async (deliveryNote: any) => {
+    if (!confirm(`Are you sure you want to delete delivery note ${deliveryNote.delivery_note_number || deliveryNote.delivery_number}? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      setIsDeleting(true);
+      const response = await fetch('/api.php', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('med_api_token') || ''}`
+        },
+        body: JSON.stringify({
+          action: 'delete',
+          table: 'delivery_notes',
+          where: { id: deliveryNote.id }
+        })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.status === 'success') {
+          const noteNumber = deliveryNote.delivery_note_number || deliveryNote.delivery_number;
+          toast.success(`Delivery note ${noteNumber} deleted successfully`);
+          retryDeliveryNotes();
+        } else {
+          toast.error('Failed to delete delivery note: ' + (result.message || 'Unknown error'));
+        }
+      } else {
+        toast.error('Failed to delete delivery note');
+      }
+    } catch (error) {
+      console.error('Error deleting delivery note:', error);
+      toast.error('Error deleting delivery note');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -403,6 +445,14 @@ export default function DeliveryNotes() {
                             <CheckCircle className="h-4 w-4" />
                           </Button>
                         )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDelete(note)}
+                          disabled={isDeleting}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>

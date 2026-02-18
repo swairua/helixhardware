@@ -2466,6 +2466,9 @@ try {
         } catch (Exception $logErr) {
         }
 
+        // Temporary debug logging for deletion issues
+        error_log("🗑️ [DEBUG] delete_receipt_with_cascade - receipt_id: " . var_export($_POST['receipt_id'] ?? $json_body['receipt_id'] ?? null, true));
+
         try {
             // Ensure we're inside a try block for all operations
             if (!isset($conn) || !$conn) {
@@ -2479,6 +2482,7 @@ try {
 
 
             $auth = requireAuthForModification($action, 'receipts');
+            error_log("🗑️ [DEBUG] delete_receipt_with_cascade - Auth user role: " . $auth['role']);
 
             // Extract receipt ID from request
             $receiptId = $json_body['receipt_id'] ?? $_POST['receipt_id'] ?? null;

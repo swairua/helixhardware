@@ -384,6 +384,19 @@ export default function DirectReceipts() {
   };
 
   const handleDeleteReceipt = (receipt: Receipt) => {
+    console.log('🗑️ [DELETE_TRIGGER] Delete receipt button clicked');
+    console.log('🗑️ [DELETE_TRIGGER] Receipt selected for deletion:', {
+      id: receipt.id,
+      receiptNumber: receipt.receipt_number,
+      invoiceId: receipt.invoice_id,
+      invoiceNumber: receipt.invoice_number,
+      paymentId: receipt.payment_id,
+      totalAmount: receipt.total_amount,
+      paymentMethod: receipt.payment_method,
+      receiptDate: receipt.receipt_date,
+      status: receipt.status
+    });
+    console.log('🗑️ [DELETE_TRIGGER] Opening delete confirmation dialog');
     setReceiptToDelete(receipt);
     setShowDeleteConfirm(true);
   };
@@ -392,6 +405,7 @@ export default function DirectReceipts() {
     if (!receiptToDelete) return;
 
     setIsDeleting(true);
+    console.log('🗑️ [FRONTEND] ===== START DELETE RECEIPT CONFIRMATION =====');
     try {
       // Use transaction-safe deletion endpoint for atomic operation
       const token = localStorage.getItem('med_api_token');
@@ -399,13 +413,17 @@ export default function DirectReceipts() {
         receipt_id: receiptToDelete.id
       };
 
-      console.log('📤 Receipt deletion request:', {
+      console.log('🗑️ [FRONTEND] Receipt deletion request:', {
         receiptId: receiptToDelete.id,
         receiptIdType: typeof receiptToDelete.id,
         receiptNumber: receiptToDelete.receipt_number,
-        token: token ? '***present***' : '***missing***'
+        invoiceId: receiptToDelete.invoice_id,
+        paymentId: receiptToDelete.payment_id,
+        token: token ? '***present***' : '***missing***',
+        requestBody: requestBody
       });
 
+      console.log('🗑️ [FRONTEND] Sending DELETE request to /api?action=delete_receipt_with_cascade');
       const response = await fetch('/api?action=delete_receipt_with_cascade', {
         method: 'POST',
         headers: {
@@ -415,46 +433,92 @@ export default function DirectReceipts() {
         body: JSON.stringify(requestBody)
       });
 
-      console.log('📨 Response status:', response.status, response.statusText);
+      console.log('🗑️ [FRONTEND] Response received:', {
+        status: response.status,
+        statusText: response.statusText,
+        headers: {
+          contentType: response.headers.get('content-type'),
+          contentLength: response.headers.get('content-length')
+        }
+      });
 
       // Check if response has content
       const responseText = await response.text();
-      console.log('📋 Response body:', responseText);
+      console.log('🗑️ [FRONTEND] Response body length:', responseText.length);
+      console.log('🗑️ [FRONTEND] Response body (first 500 chars):', responseText.substring(0, 500));
 
       if (!response.ok) {
+        console.error('🗑️ [FRONTEND] Response not OK, attempting to parse error:', {
+          statusCode: response.status,
+          statusText: response.statusText,
+          bodyLength: responseText.length,
+          bodyPreview: responseText.substring(0, 200)
+        });
+
+        // Handle empty response
+        if (!responseText || responseText.trim() === '') {
+          console.error('🗑️ [FRONTEND] Empty response body from server');
+          throw new Error(`HTTP ${response.status}: The server returned an empty response. This may indicate a server error.`);
+        }
+
+        // Try to parse JSON error response
         try {
           const errorData = JSON.parse(responseText);
+          console.error('🗑️ [FRONTEND] Parsed error data:', errorData);
           throw new Error(errorData.message || 'Failed to delete receipt');
-        } catch {
+        } catch (parseErr) {
+          console.error('🗑️ [FRONTEND] Failed to parse error response as JSON:', parseErr);
+          // If it's not JSON, use the raw text as the error message
+          if (responseText.includes('<') || responseText.includes('<!')) {
+            console.error('🗑️ [FRONTEND] Response appears to be HTML, not JSON');
+            throw new Error(`HTTP ${response.status}: Server returned an HTML error page. Please check server logs.`);
+          }
           throw new Error(`HTTP ${response.status}: ${responseText || 'Empty response'}`);
         }
       }
 
       if (!responseText) {
+        console.error('🗑️ [FRONTEND] Empty response from server');
         throw new Error('Empty response from server');
       }
 
+      console.log('🗑️ [FRONTEND] Parsing success response...');
       const result = JSON.parse(responseText);
+      console.log('🗑️ [FRONTEND] Parsed response:', result);
 
       if (result.status !== 'success') {
+        console.error('🗑️ [FRONTEND] Response status is not success:', {
+          status: result.status,
+          message: result.message
+        });
         throw new Error(result.message || 'Failed to delete receipt');
       }
+
+      console.log('✅ [FRONTEND] Deletion successful, updating local state');
 
       // Remove from local state
       setReceipts(receipts.filter(r => r.id !== receiptToDelete.id));
 
+      console.log('✅ [FRONTEND] Local state updated, showing success toast');
       toast.success(`Receipt ${receiptToDelete.receipt_number} and all related records deleted successfully`);
       setShowDeleteConfirm(false);
       setReceiptToDelete(null);
 
+      console.log('✅ [FRONTEND] Refreshing receipts list...');
       // Refresh the receipts list to ensure consistency
       setTimeout(() => {
+        console.log('✅ [FRONTEND] Executing fetchDirectReceipts refresh');
         fetchDirectReceipts();
       }, 500);
+
+      console.log('✅ [FRONTEND] ===== DELETE RECEIPT COMPLETED SUCCESSFULLY =====');
     } catch (err) {
-      console.error('Error deleting receipt:', err);
+      console.error('🔴 [FRONTEND] Error deleting receipt:', err);
+      console.error('🔴 [FRONTEND] Error stack:', err instanceof Error ? err.stack : 'N/A');
       const errorMessage = err instanceof Error ? err.message : 'Failed to delete receipt';
+      console.error('🔴 [FRONTEND] Displaying error toast:', errorMessage);
       toast.error(errorMessage);
+      console.log('🔴 [FRONTEND] ===== DELETE RECEIPT FAILED =====');
     } finally {
       setIsDeleting(false);
     }
@@ -790,7 +854,28 @@ export default function DirectReceipts() {
       )}
 
       {/* Delete Confirmation Dialog */}
-      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+      <AlertDialog
+        open={showDeleteConfirm}
+        onOpenChange={(open) => {
+          if (open) {
+            console.log('🗑️ [DELETE_MODAL] Delete confirmation dialog opened');
+            console.log('🗑️ [DELETE_MODAL] Receipt details:', {
+              id: receiptToDelete?.id,
+              receiptNumber: receiptToDelete?.receipt_number,
+              invoiceId: receiptToDelete?.invoice_id,
+              invoiceNumber: receiptToDelete?.invoice_number,
+              paymentId: receiptToDelete?.payment_id,
+              totalAmount: receiptToDelete?.total_amount,
+              paymentMethod: receiptToDelete?.payment_method,
+              receiptDate: receiptToDelete?.receipt_date,
+              notes: receiptToDelete?.notes
+            });
+          } else {
+            console.log('🗑️ [DELETE_MODAL] Delete confirmation dialog closed');
+          }
+          setShowDeleteConfirm(open);
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <div className="flex items-center space-x-2">
@@ -798,31 +883,79 @@ export default function DirectReceipts() {
               <AlertDialogTitle>Delete Receipt</AlertDialogTitle>
             </div>
           </AlertDialogHeader>
-          <div className="space-y-2">
+          <div className="space-y-4">
             <AlertDialogDescription>
-              Are you sure you want to delete receipt <strong>{receiptToDelete?.receipt_number}</strong>?
+              Are you sure you want to delete receipt <strong className="text-foreground">{receiptToDelete?.receipt_number}</strong>?
             </AlertDialogDescription>
-            <div className="text-sm text-muted-foreground bg-muted/50 p-2 rounded">
-              <strong>This will also delete:</strong>
-              <ul className="list-disc list-inside mt-1 space-y-1">
+
+            {/* Receipt Details Preview */}
+            <div className="text-sm bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 p-3 rounded space-y-2">
+              <div className="font-semibold text-blue-900 dark:text-blue-100">📋 Receipt Information:</div>
+              <div className="space-y-1 text-xs text-blue-800 dark:text-blue-200">
+                {receiptToDelete?.receipt_number && (
+                  <div><span className="font-semibold">Receipt #:</span> {receiptToDelete.receipt_number}</div>
+                )}
+                {receiptToDelete?.invoice_number && (
+                  <div><span className="font-semibold">Invoice #:</span> {receiptToDelete.invoice_number}</div>
+                )}
+                {receiptToDelete?.total_amount && (
+                  <div><span className="font-semibold">Amount:</span> ${parseFloat(receiptToDelete.total_amount).toFixed(2)}</div>
+                )}
+                {receiptToDelete?.payment_method && (
+                  <div><span className="font-semibold">Method:</span> {receiptToDelete.payment_method}</div>
+                )}
+                {receiptToDelete?.receipt_date && (
+                  <div><span className="font-semibold">Date:</span> {new Date(receiptToDelete.receipt_date).toLocaleDateString()}</div>
+                )}
+              </div>
+            </div>
+
+            {/* Cascade Delete Warning */}
+            <div className="text-sm text-muted-foreground bg-muted/50 p-3 rounded space-y-2">
+              <div className="font-semibold text-destructive">⚠️ This will also delete:</div>
+              <ul className="list-disc list-inside space-y-1 text-xs">
                 <li>Receipt line items snapshot</li>
                 <li>Payment allocation</li>
-                <li>Payment record</li>
-                <li>Invoice status will revert to draft</li>
+                <li>Payment record (ID: {receiptToDelete?.payment_id || 'N/A'})</li>
+                <li>Invoice status will revert to draft (Invoice ID: {receiptToDelete?.invoice_id || 'N/A'})</li>
               </ul>
             </div>
-            <div className="text-sm font-medium text-destructive">
-              This action cannot be undone.
+
+            {/* Critical Warning */}
+            <div className="text-sm font-semibold text-destructive bg-destructive/10 p-2 rounded border border-destructive/20">
+              🔴 This action cannot be undone. All related financial records will be permanently deleted.
             </div>
           </div>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel
+              disabled={isDeleting}
+              onClick={() => {
+                console.log('🗑️ [DELETE_MODAL] Delete cancelled by user');
+              }}
+            >
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
-              onClick={confirmDelete}
+              onClick={() => {
+                console.log('🗑️ [DELETE_MODAL] Delete button clicked, starting deletion process');
+                console.log('🗑️ [DELETE_MODAL] Receipt to delete:', {
+                  id: receiptToDelete?.id,
+                  number: receiptToDelete?.receipt_number,
+                  amount: receiptToDelete?.total_amount
+                });
+                confirmDelete();
+              }}
               disabled={isDeleting}
               className="bg-destructive hover:bg-destructive/90"
             >
-              {isDeleting ? 'Deleting...' : 'Delete'}
+              {isDeleting ? (
+                <span className="flex items-center gap-2">
+                  <span className="inline-block animate-spin">⏳</span>
+                  Deleting...
+                </span>
+              ) : (
+                'Delete Receipt'
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

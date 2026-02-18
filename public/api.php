@@ -28,24 +28,49 @@ header("Access-Control-Max-Age: 86400");
 header("Access-Control-Expose-Headers: Content-Type, X-Total-Count, X-Page, X-Page-Size");
 
 // ENDPOINT IDENTIFIER - Log which API file is executing (after headers are set)
-error_log("🟢 [ENDPOINT] Using public/api.php (main API)");
+// Removed verbose logging - only SQL errors are logged now
 
 // Set error handler to catch any errors and ensure CORS headers are sent
 set_error_handler(function($errno, $errstr, $errfile, $errline) {
-    error_log("PHP Error [$errno]: $errstr in $errfile:$errline");
+    error_log("🔴 [ERROR_HANDLER] PHP Error [$errno]: $errstr in $errfile:$errline");
     // Don't suppress the error, just log it
     return false;
 });
 
 // Set exception handler to ensure CORS headers are sent even for uncaught exceptions
 set_exception_handler(function($exception) {
-    error_log("Uncaught Exception: " . $exception->getMessage() . " in " . $exception->getFile() . ":" . $exception->getLine());
+    error_log("🔴 [EXCEPTION_HANDLER] Uncaught Exception: " . $exception->getMessage() . " in " . $exception->getFile() . ":" . $exception->getLine());
+    error_log("🔴 [EXCEPTION_HANDLER] Stack trace: " . $exception->getTraceAsString());
+    @ob_clean(); // Clear any accidental output (suppress warnings)
     http_response_code(500);
-    echo json_encode([
+    header('Content-Type: application/json; charset=utf-8');
+
+    $error_response = [
         'status' => 'error',
         'message' => 'An unexpected error occurred: ' . $exception->getMessage()
-    ]);
+    ];
+
+    echo json_encode($error_response);
     exit();
+});
+
+// Register shutdown function to catch fatal errors
+register_shutdown_function(function() {
+    $error = error_get_last();
+    if ($error && ($error['type'] === E_ERROR || $error['type'] === E_PARSE || $error['type'] === E_CORE_ERROR || $error['type'] === E_COMPILE_ERROR)) {
+        error_log("🔴 [SHUTDOWN_HANDLER] Fatal error caught: " . $error['message'] . " in " . $error['file'] . ":" . $error['line']);
+        // Clear any buffered output to ensure clean JSON response
+        @ob_clean();
+        http_response_code(500);
+        header('Content-Type: application/json; charset=utf-8');
+
+        $error_response = [
+            'status' => 'error',
+            'message' => 'A fatal error occurred: ' . $error['message']
+        ];
+
+        echo json_encode($error_response);
+    }
 });
 
 // Handle CORS preflight requests (OPTIONS) - respond immediately
@@ -141,25 +166,23 @@ if (in_array($request_method, ['POST', 'PUT', 'PATCH'])) {
 }
 
 // Get request parameters
-$action = $_POST['action'] ?? ($_GET['action'] ?? null);
-$table = $_POST['table'] ?? ($_GET['table'] ?? null);
-$data = $_POST['data'] ?? ($json_body ?? []);
-$where = $_POST['where'] ?? ($_GET['where'] ?? null);
-$order_by = $_POST['order_by'] ?? ($_GET['order_by'] ?? null);
-$schema = $_POST['schema'] ?? ($_GET['schema'] ?? null);
+$action = $_POST['action'] ?? ($_GET['action'] ?? ($json_body['action'] ?? null));
+$table = $_POST['table'] ?? ($_GET['table'] ?? ($json_body['table'] ?? null));
+$data = $_POST['data'] ?? ($json_body['data'] ?? ($json_body ?? []));
+$where = $_POST['where'] ?? ($_GET['where'] ?? ($json_body['where'] ?? null));
+$order_by = $_POST['order_by'] ?? ($_GET['order_by'] ?? ($json_body['order_by'] ?? null));
+$schema = $_POST['schema'] ?? ($_GET['schema'] ?? ($json_body['schema'] ?? null));
 
 // Normalize action to always be a string (handle case where it's submitted as an array)
 // This handles cases where the same parameter name appears multiple times in the query string
 if (is_array($action)) {
     // If it's an array, take the first element
     $action = $action[0] ?? null;
-    error_log("🟡 [ACTION] Received action as array, extracted first element: " . (is_string($action) ? $action : json_encode($action)));
 }
 
 // Convert to string and trim
 if ($action !== null) {
     $action = trim((string)$action);
-    error_log("🟢 [ACTION] Normalized action parameter to: '$action' (type: " . gettype($action) . ", length: " . strlen($action) . ")");
 }
 
 // Handle file uploads endpoint
@@ -2463,56 +2486,107 @@ try {
     elseif ($action === "delete_receipt_with_cascade") {
         // Transaction-safe receipt deletion that cascades to all related records
         // Requires authorization for modifications
-        $auth = requireAuthForModification($action, 'receipts');
+        error_log("🗑️ [DELETE_RECEIPT_CASCADE] ===== START DELETE RECEIPT CASCADE =====");
+        error_log("🗑️ [DELETE_RECEIPT_CASCADE] Received action: delete_receipt_with_cascade");
 
-        // Extract receipt ID from request
-        $receiptId = $json_body['receipt_id'] ?? $_POST['receipt_id'] ?? null;
-
-        if (!$receiptId) {
-            throw new Exception("Missing receipt_id parameter");
-        }
-
-        error_log("🗑️ [DELETE_RECEIPT_CASCADE] Starting receipt deletion cascade for receipt_id: $receiptId");
-
-        // Cast receipt ID to integer (since receipts.id is now INT AUTO_INCREMENT)
-        $receiptId = (int)$receiptId;
-        if ($receiptId <= 0) {
-            throw new Exception("Invalid receipt_id: must be a positive integer");
-        }
-
-        // Start transaction for atomicity
-        if (!$conn->begin_transaction()) {
-            throw new Exception("Failed to start transaction");
+        // Debug: Log the request data safely
+        try {
+            if ($json_body && is_array($json_body)) {
+                error_log("🗑️ [DELETE_RECEIPT_CASCADE] JSON body keys: " . implode(', ', array_keys($json_body)));
+                if (isset($json_body['receipt_id'])) {
+                    error_log("🗑️ [DELETE_RECEIPT_CASCADE] Receipt ID in body: " . $json_body['receipt_id']);
+                }
+            } else {
+                error_log("🗑️ [DELETE_RECEIPT_CASCADE] JSON body is not an array or is null");
+            }
+        } catch (Exception $logErr) {
+            error_log("🗑️ [DELETE_RECEIPT_CASCADE] Error logging request data: " . $logErr->getMessage());
         }
 
         try {
+            // Ensure we're inside a try block for all operations
+            if (!isset($conn) || !$conn) {
+                throw new Exception("Database connection not available");
+            }
+
+            // Verify connection is working
+            if (!$conn->ping()) {
+                throw new Exception("Database connection lost");
+            }
+
+            error_log("🗑️ [DELETE_RECEIPT_CASCADE] Database connection verified");
+
+            $auth = requireAuthForModification($action, 'receipts');
+            error_log("🗑️ [DELETE_RECEIPT_CASCADE] Authorization passed for user");
+
+            // Extract receipt ID from request
+            $receiptId = $json_body['receipt_id'] ?? $_POST['receipt_id'] ?? null;
+            error_log("🗑️ [DELETE_RECEIPT_CASCADE] Extracted receipt_id: " . var_export($receiptId, true));
+
+            if (!$receiptId) {
+                throw new Exception("Missing receipt_id parameter");
+            }
+
+            error_log("🗑️ [DELETE_RECEIPT_CASCADE] Starting receipt deletion cascade for receipt_id: $receiptId");
+
+            // Cast receipt ID to integer (since receipts.id is now INT AUTO_INCREMENT)
+            $receiptId = (int)$receiptId;
+            if ($receiptId <= 0) {
+                throw new Exception("Invalid receipt_id: must be a positive integer");
+            }
+            error_log("🗑️ [DELETE_RECEIPT_CASCADE] Receipt ID validated and cast to int: $receiptId");
+
+            // Start transaction for atomicity
+            if (!$conn->begin_transaction()) {
+                throw new Exception("Failed to start transaction: " . $conn->error);
+            }
+            error_log("🗑️ [DELETE_RECEIPT_CASCADE] Database transaction started successfully");
+
+            // Initialize variables to avoid undefined variable errors later
+            $receiptNumber = 'Unknown';
+            $invoiceId = null;
+            $paymentId = null;
+            $receiptAmount = 0;
+
             // Step 1: Fetch receipt details before deletion (for audit/response)
             $receipt_sql = "SELECT * FROM receipts WHERE id = $receiptId LIMIT 1";
+            error_log("🗑️ [DELETE_RECEIPT_CASCADE] Step 1 - Fetching receipt with SQL: $receipt_sql");
             $receipt_result = $conn->query($receipt_sql);
-            if (!$receipt_result || $receipt_result->num_rows === 0) {
-                throw new Exception("Receipt not found");
+            if (!$receipt_result) {
+                throw new Exception("Database query error: " . $conn->error);
+            }
+            if ($receipt_result->num_rows === 0) {
+                throw new Exception("Receipt not found with id: $receiptId");
             }
             $receipt = $receipt_result->fetch_assoc();
-            $receiptNumber = $receipt['receipt_number'];
-            $invoiceId = $receipt['invoice_id'];
-            $paymentId = $receipt['payment_id'];
-            $receiptAmount = $receipt['total_amount'] ?? 0;
-            error_log("🗑️ [DELETE_RECEIPT_CASCADE] Found receipt: $receiptNumber (amount: $receiptAmount)");
+            $receiptNumber = $receipt['receipt_number'] ?? 'Unknown';
+            $invoiceId = $receipt['invoice_id'] ?? null;
+            $paymentId = $receipt['payment_id'] ?? null;
+            $receiptAmount = (float)($receipt['total_amount'] ?? 0);
+            error_log("🗑️ [DELETE_RECEIPT_CASCADE] Step 1 SUCCESS - Found receipt: $receiptNumber (amount: $receiptAmount, invoiceId: $invoiceId, paymentId: $paymentId)");
 
             // Step 2: Delete receipt items (snapshot)
             // These have CASCADE delete on receipt_id, but we delete explicitly for clarity
             $delete_items_sql = "DELETE FROM receipt_items WHERE receipt_id = $receiptId";
+            error_log("🗑️ [DELETE_RECEIPT_CASCADE] Step 2 - Deleting receipt items with SQL: $delete_items_sql");
             if (!$conn->query($delete_items_sql)) {
                 throw new Exception("Failed to delete receipt items: " . $conn->error);
             }
+            $items_affected = $conn->affected_rows;
+            error_log("🗑️ [DELETE_RECEIPT_CASCADE] Step 2 SUCCESS - Deleted $items_affected receipt items");
 
             // Step 3: Delete payment_audit_log entries before deleting the payment
             if ($paymentId) {
                 $paymentId = (int)$paymentId;
                 $delete_audit_sql = "DELETE FROM payment_audit_log WHERE payment_id = $paymentId";
+                error_log("🗑️ [DELETE_RECEIPT_CASCADE] Step 3 - Deleting payment audit logs with SQL: $delete_audit_sql");
                 if (!$conn->query($delete_audit_sql)) {
                     throw new Exception("Failed to delete payment audit log: " . $conn->error);
                 }
+                $audit_affected = $conn->affected_rows;
+                error_log("🗑️ [DELETE_RECEIPT_CASCADE] Step 3 SUCCESS - Deleted $audit_affected audit log entries");
+            } else {
+                error_log("🗑️ [DELETE_RECEIPT_CASCADE] Step 3 SKIPPED - No payment ID");
             }
 
             // Step 4: Delete payment allocations
@@ -2521,31 +2595,47 @@ try {
                 // With CASCADE constraint on payment_allocations, this will auto-delete related records
                 // But we delete explicitly for clarity and control
                 $delete_allocations_sql = "DELETE FROM payment_allocations WHERE payment_id = $paymentId";
+                error_log("🗑️ [DELETE_RECEIPT_CASCADE] Step 4 - Deleting payment allocations with SQL: $delete_allocations_sql");
                 if (!$conn->query($delete_allocations_sql)) {
                     throw new Exception("Failed to delete payment allocations: " . $conn->error);
                 }
+                $allocations_affected = $conn->affected_rows;
+                error_log("🗑️ [DELETE_RECEIPT_CASCADE] Step 4 SUCCESS - Deleted $allocations_affected payment allocations");
+            } else {
+                error_log("🗑️ [DELETE_RECEIPT_CASCADE] Step 4 SKIPPED - No payment ID");
             }
 
             // Step 5: Delete the payment record
             if ($paymentId) {
                 $paymentId = (int)$paymentId;
                 $delete_payment_sql = "DELETE FROM payments WHERE id = $paymentId";
+                error_log("🗑️ [DELETE_RECEIPT_CASCADE] Step 5 - Deleting payment with SQL: $delete_payment_sql");
                 if (!$conn->query($delete_payment_sql)) {
                     throw new Exception("Failed to delete payment: " . $conn->error);
                 }
+                error_log("🗑️ [DELETE_RECEIPT_CASCADE] Step 5 SUCCESS - Payment deleted");
+            } else {
+                error_log("🗑️ [DELETE_RECEIPT_CASCADE] Step 5 SKIPPED - No payment ID");
             }
 
             // Step 6: Recalculate invoice balance and status if this receipt was linked to an invoice
             if ($invoiceId) {
                 $invoiceId = (int)$invoiceId;
+                error_log("🗑️ [DELETE_RECEIPT_CASCADE] Step 6 - Recalculating invoice status for invoice_id: $invoiceId");
 
                 // Fetch current invoice state
                 $invoice_check_sql = "SELECT id, total_amount, status FROM invoices WHERE id = $invoiceId LIMIT 1";
+                error_log("🗑️ [DELETE_RECEIPT_CASCADE] Step 6a - Fetching invoice with SQL: $invoice_check_sql");
                 $invoice_check_result = $conn->query($invoice_check_sql);
 
-                if ($invoice_check_result && $invoice_check_result->num_rows > 0) {
+                if (!$invoice_check_result) {
+                    throw new Exception("Failed to fetch invoice: " . $conn->error);
+                }
+
+                if ($invoice_check_result->num_rows > 0) {
                     $invoice = $invoice_check_result->fetch_assoc();
                     $total_amount = $invoice['total_amount'] ?? 0;
+                    error_log("🗑️ [DELETE_RECEIPT_CASCADE] Step 6b - Invoice found, total_amount: $total_amount");
 
                     // Calculate paid amount from remaining payment allocations
                     $paid_sum_sql = "
@@ -2553,12 +2643,16 @@ try {
                         FROM payment_allocations pa
                         WHERE pa.invoice_id = $invoiceId
                     ";
+                    error_log("🗑️ [DELETE_RECEIPT_CASCADE] Step 6c - Calculating paid amount with SQL: $paid_sum_sql");
                     $paid_sum_result = $conn->query($paid_sum_sql);
                     $paid_amount = 0;
                     if ($paid_sum_result) {
                         $paid_row = $paid_sum_result->fetch_assoc();
                         $paid_amount = floatval($paid_row['paid_amount'] ?? 0);
+                    } else {
+                        throw new Exception("Failed to calculate paid amount: " . $conn->error);
                     }
+                    error_log("🗑️ [DELETE_RECEIPT_CASCADE] Step 6c - Paid amount calculated: $paid_amount");
 
                     $balance_due = max(0, floatval($total_amount) - $paid_amount);
 
@@ -2569,6 +2663,7 @@ try {
                     } elseif ($paid_amount > 0) {
                         $new_status = 'partial';
                     }
+                    error_log("🗑️ [DELETE_RECEIPT_CASCADE] Step 6d - New invoice status: $new_status (paid: $paid_amount, balance_due: $balance_due)");
 
                     // Update invoice with recalculated values
                     $update_invoice_sql = "UPDATE invoices SET
@@ -2578,50 +2673,90 @@ try {
                         updated_at = NOW()
                         WHERE id = $invoiceId";
 
+                    error_log("🗑️ [DELETE_RECEIPT_CASCADE] Step 6e - Updating invoice with SQL: $update_invoice_sql");
                     if (!$conn->query($update_invoice_sql)) {
                         throw new Exception("Failed to update invoice status: " . $conn->error);
                     }
+                    error_log("🗑️ [DELETE_RECEIPT_CASCADE] Step 6 SUCCESS - Invoice updated");
+                } else {
+                    error_log("⚠️ [DELETE_RECEIPT_CASCADE] Step 6 WARNING - Invoice not found with id: $invoiceId");
                 }
+            } else {
+                error_log("🗑️ [DELETE_RECEIPT_CASCADE] Step 6 SKIPPED - No invoice ID");
             }
 
             // Step 7: Delete the receipt record itself
             // This will cascade to receipt_items (though we already deleted them)
             $delete_receipt_sql = "DELETE FROM receipts WHERE id = $receiptId";
+            error_log("🗑️ [DELETE_RECEIPT_CASCADE] Step 7 - Deleting receipt with SQL: $delete_receipt_sql");
             if (!$conn->query($delete_receipt_sql)) {
                 throw new Exception("Failed to delete receipt: " . $conn->error);
             }
+            error_log("🗑️ [DELETE_RECEIPT_CASCADE] Step 7 SUCCESS - Receipt record deleted");
 
             // Commit transaction
+            error_log("🗑️ [DELETE_RECEIPT_CASCADE] Committing database transaction");
             if (!$conn->commit()) {
                 throw new Exception("Failed to commit transaction: " . $conn->error);
             }
 
-            error_log("✅ [DELETE_RECEIPT_CASCADE] Successfully deleted receipt $receiptNumber (amount: $receiptAmount, linked to invoice: $invoiceId)");
+            error_log("✅ [DELETE_RECEIPT_CASCADE] ===== COMPLETE - Successfully deleted receipt $receiptNumber (amount: $receiptAmount, linked to invoice: $invoiceId) =====");
 
             // Return success response
+            @ob_clean(); // Clear any accidental output (suppress any warnings)
             http_response_code(200);
-            echo json_encode([
+            header('Content-Type: application/json; charset=utf-8');
+
+            $response_data = [
                 'status' => 'success',
                 'message' => "Receipt $receiptNumber and all related records deleted successfully",
                 'data' => [
-                    'receipt_id' => $receiptId,
-                    'receipt_number' => $receiptNumber,
+                    'receipt_id' => (int)$receiptId,
+                    'receipt_number' => (string)$receiptNumber,
                     'invoice_id' => $invoiceId,
                     'payment_id' => $paymentId,
-                    'amount_reversed' => $receiptAmount
+                    'amount_reversed' => (float)$receiptAmount
                 ]
-            ]);
+            ];
+
+            echo json_encode($response_data);
             exit();
 
         } catch (Exception $e) {
             // Rollback on any error
-            $conn->rollback();
-            error_log("🔴 [DELETE_RECEIPT_CASCADE] Receipt deletion transaction failed for $receiptId: " . $e->getMessage());
-            http_response_code(400);
-            echo json_encode([
-                'status' => 'error',
-                'message' => 'Receipt deletion failed: ' . $e->getMessage()
-            ]);
+            error_log("🔴 [DELETE_RECEIPT_CASCADE] EXCEPTION CAUGHT: " . $e->getMessage());
+            error_log("🔴 [DELETE_RECEIPT_CASCADE] Exception file: " . $e->getFile() . ", line: " . $e->getLine());
+            error_log("🔴 [DELETE_RECEIPT_CASCADE] Stack trace: " . $e->getTraceAsString());
+
+            // Safely attempt rollback
+            if ($conn && is_object($conn)) {
+                try {
+                    $conn->rollback();
+                    error_log("🔴 [DELETE_RECEIPT_CASCADE] Transaction rolled back");
+                } catch (Exception $rollbackErr) {
+                    error_log("🔴 [DELETE_RECEIPT_CASCADE] Rollback failed: " . $rollbackErr->getMessage());
+                }
+            }
+
+            error_log("🔴 [DELETE_RECEIPT_CASCADE] ===== FAILED - Receipt deletion transaction failed: " . $e->getMessage() . " =====");
+
+            // Safely output error response
+            try {
+                @ob_clean(); // Clear any accidental output (suppress warnings)
+                http_response_code(400);
+                header('Content-Type: application/json; charset=utf-8');
+
+                $error_response = [
+                    'status' => 'error',
+                    'message' => 'Receipt deletion failed: ' . $e->getMessage()
+                ];
+
+                echo json_encode($error_response);
+            } catch (Exception $outputErr) {
+                error_log("🔴 [DELETE_RECEIPT_CASCADE] Failed to output error response: " . $outputErr->getMessage());
+                // As a last resort, output plain text error
+                echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+            }
             exit();
         }
     }
@@ -2641,12 +2776,24 @@ try {
         http_response_code(400);
     }
 
-    error_log("API Error [" . http_response_code() . "]: " . $e->getMessage() . " in " . $e->getFile() . ":" . $e->getLine());
+    error_log("🔴 API Error [" . http_response_code() . "]: " . $e->getMessage() . " in " . $e->getFile() . ":" . $e->getLine());
+    error_log("🔴 Stack trace: " . $e->getTraceAsString());
 
-    echo json_encode([
-        'status' => 'error',
-        'message' => $e->getMessage()
-    ]);
+    try {
+        @ob_clean(); // Clear any accidental output (suppress warnings)
+        header('Content-Type: application/json; charset=utf-8');
+
+        $error_response = [
+            'status' => 'error',
+            'message' => $e->getMessage()
+        ];
+
+        echo json_encode($error_response);
+    } catch (Exception $outputErr) {
+        error_log("🔴 Failed to output error JSON: " . $outputErr->getMessage());
+        // As fallback, output JSON anyway
+        echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+    }
 
 }
 

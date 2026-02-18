@@ -10,10 +10,10 @@
 -- - Excess payments can be handled as credit balance or change note
 
 CREATE TABLE IF NOT EXISTS receipts (
-  id CHAR(36) PRIMARY KEY COMMENT 'UUID identifier',
-  company_id CHAR(36) NOT NULL COMMENT 'Foreign key to companies',
-  payment_id CHAR(36) NOT NULL COMMENT 'Foreign key to payments',
-  invoice_id CHAR(36) COMMENT 'Foreign key to invoices (nullable to preserve receipt history when invoice deleted)',
+  id INT NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT 'Auto-increment identifier',
+  company_id INT NOT NULL COMMENT 'Foreign key to companies',
+  payment_id INT NOT NULL COMMENT 'Foreign key to payments',
+  invoice_id INT COMMENT 'Foreign key to invoices (nullable to preserve receipt history when invoice deleted)',
   
   -- Receipt Identification
   receipt_number VARCHAR(100) NOT NULL COMMENT 'Independent receipt numbering (REC-XXXX format)',
@@ -28,19 +28,19 @@ CREATE TABLE IF NOT EXISTS receipts (
   
   -- Excess Handling
   excess_handling VARCHAR(50) DEFAULT 'pending' COMMENT 'credit_balance, change_note, pending',
-  change_note_id CHAR(36) COMMENT 'If excess_handling = change_note',
+  change_note_id INT COMMENT 'If excess_handling = change_note',
 
   -- Receipt Status / Lifecycle
   status VARCHAR(50) DEFAULT 'finalized' COMMENT 'draft, finalized, voided, archived',
   void_reason VARCHAR(255) COMMENT 'Reason if receipt was voided',
-  voided_by CHAR(36) COMMENT 'User who voided the receipt',
+  voided_by INT COMMENT 'User who voided the receipt',
   voided_at TIMESTAMP NULL COMMENT 'When receipt was voided',
 
   -- Additional Info
   notes TEXT COMMENT 'Additional notes',
   
   -- Audit Fields
-  created_by CHAR(36) COMMENT 'User who created the receipt',
+  created_by INT COMMENT 'User who created the receipt',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   

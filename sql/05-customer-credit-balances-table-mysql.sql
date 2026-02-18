@@ -10,19 +10,19 @@
 -- - 'expired': Credit has expired and cannot be used
 
 CREATE TABLE IF NOT EXISTS customer_credit_balances (
-  id CHAR(36) PRIMARY KEY COMMENT 'UUID identifier',
-  company_id CHAR(36) NOT NULL COMMENT 'Foreign key to companies',
-  customer_id CHAR(36) NOT NULL COMMENT 'Foreign key to customers',
+  id INT NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT 'Auto-increment identifier',
+  company_id INT NOT NULL COMMENT 'Foreign key to companies',
+  customer_id INT NOT NULL COMMENT 'Foreign key to customers',
   
   -- Credit Amount
   credit_amount DECIMAL(15, 2) NOT NULL COMMENT 'Available credit balance',
   
   -- Source Information
-  source_receipt_id CHAR(36) NOT NULL COMMENT 'Receipt that generated this credit',
-  source_payment_id CHAR(36) COMMENT 'Payment that generated the credit',
+  source_receipt_id INT NOT NULL COMMENT 'Receipt that generated this credit',
+  source_payment_id INT COMMENT 'Payment that generated the credit',
   
   -- Application Information
-  applied_invoice_id CHAR(36) COMMENT 'Invoice credit was applied to (if any)',
+  applied_invoice_id INT COMMENT 'Invoice credit was applied to (if any)',
   
   -- Status
   status VARCHAR(50) DEFAULT 'available' COMMENT 'available, applied, expired',

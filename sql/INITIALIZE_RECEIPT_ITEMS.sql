@@ -6,9 +6,9 @@
 
 -- Create receipt_items table if it doesn't exist
 CREATE TABLE IF NOT EXISTS `receipt_items` (
-  `id` CHAR(36) NOT NULL PRIMARY KEY COMMENT 'UUID identifier',
-  `receipt_id` CHAR(36) NOT NULL COMMENT 'Foreign key to receipts',
-  `product_id` CHAR(36) COMMENT 'Foreign key to products (optional)',
+  `id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT 'Auto-increment identifier',
+  `receipt_id` INT NOT NULL COMMENT 'Foreign key to receipts',
+  `product_id` INT COMMENT 'Foreign key to products (optional)',
   
   -- Item Description
   `description` TEXT NOT NULL COMMENT 'Item description',
@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS `receipt_items` (
   `discount_before_vat` DECIMAL(15, 2) DEFAULT 0 COMMENT 'Discount applied before tax',
   
   -- Tax Setting Reference (for audit purposes)
-  `tax_setting_id` CHAR(36) COMMENT 'Reference to tax_settings for audit',
+  `tax_setting_id` INT COMMENT 'Reference to tax_settings for audit',
   
   -- Line Total
   `line_total` DECIMAL(15, 2) NOT NULL COMMENT 'Total for this line item',

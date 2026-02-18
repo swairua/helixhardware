@@ -1695,6 +1695,8 @@ try {
             throw new Exception("Missing invoice_id parameter");
         }
 
+        error_log("🗑️ [DELETE_CASCADE] Starting invoice deletion cascade for invoice_id: $invoice_id");
+
         // Escape the invoice ID for safe use in SQL
         $invoice_id_e = escape($conn, $invoice_id);
 
@@ -1712,6 +1714,7 @@ try {
             }
             $invoice = $invoice_result->fetch_assoc();
             $invoice_number = $invoice['invoice_number'];
+            error_log("🗑️ [DELETE_CASCADE] Found invoice: $invoice_number");
 
             // Step 2: Find all payments related to this invoice (directly or through allocations)
             // Get payment IDs that are directly linked to invoice or allocated to it
@@ -1805,6 +1808,8 @@ try {
                 throw new Exception("Failed to commit transaction: " . $conn->error);
             }
 
+            error_log("✅ [DELETE_CASCADE] Successfully deleted invoice $invoice_number with " . count($payment_ids) . " related payments");
+
             // Return success response
             echo json_encode([
                 'status' => 'success',
@@ -1823,7 +1828,7 @@ try {
         } catch (Exception $e) {
             // Rollback on any error
             $conn->rollback();
-            error_log("Invoice deletion transaction failed: " . $e->getMessage());
+            error_log("🔴 [DELETE_CASCADE] Invoice deletion transaction failed for $invoice_id: " . $e->getMessage());
             throw new Exception("Invoice deletion failed: " . $e->getMessage());
         }
     }
@@ -1831,6 +1836,9 @@ try {
         if (!$table || !$where) {
             throw new Exception("Missing table or where clause");
         }
+
+        // Log delete request
+        error_log("🗑️ [DELETE] Deleting from table: $table, where: " . json_encode($where));
 
         // Check authorization for modifications to protected tables
         $protected_tables = ['companies', 'users', 'profiles', 'user_permissions', 'roles'];
@@ -1887,14 +1895,20 @@ try {
             $sql .= " WHERE " . $where;
         }
 
+        error_log("🗑️ [DELETE] Executing SQL: $sql");
+
         if (!$conn->query($sql)) {
+            error_log("🔴 [DELETE] Error deleting from $table: " . $conn->error);
             throw new Exception("Delete failed: " . $conn->error);
         }
+
+        $affected_rows = $conn->affected_rows;
+        error_log("✅ [DELETE] Successfully deleted $affected_rows row(s) from $table");
 
         echo json_encode([
             'status' => 'success',
             'message' => 'Record deleted',
-            'affected_rows' => $conn->affected_rows
+            'affected_rows' => $affected_rows
         ]);
         exit();
     }
@@ -2458,6 +2472,8 @@ try {
             throw new Exception("Missing receipt_id parameter");
         }
 
+        error_log("🗑️ [DELETE_RECEIPT_CASCADE] Starting receipt deletion cascade for receipt_id: $receiptId");
+
         // Cast receipt ID to integer (since receipts.id is now INT AUTO_INCREMENT)
         $receiptId = (int)$receiptId;
         if ($receiptId <= 0) {
@@ -2481,6 +2497,7 @@ try {
             $invoiceId = $receipt['invoice_id'];
             $paymentId = $receipt['payment_id'];
             $receiptAmount = $receipt['total_amount'] ?? 0;
+            error_log("🗑️ [DELETE_RECEIPT_CASCADE] Found receipt: $receiptNumber (amount: $receiptAmount)");
 
             // Step 2: Delete receipt items (snapshot)
             // These have CASCADE delete on receipt_id, but we delete explicitly for clarity
@@ -2579,6 +2596,8 @@ try {
                 throw new Exception("Failed to commit transaction: " . $conn->error);
             }
 
+            error_log("✅ [DELETE_RECEIPT_CASCADE] Successfully deleted receipt $receiptNumber (amount: $receiptAmount, linked to invoice: $invoiceId)");
+
             // Return success response
             http_response_code(200);
             echo json_encode([
@@ -2597,7 +2616,7 @@ try {
         } catch (Exception $e) {
             // Rollback on any error
             $conn->rollback();
-            error_log("Receipt deletion transaction failed: " . $e->getMessage());
+            error_log("🔴 [DELETE_RECEIPT_CASCADE] Receipt deletion transaction failed for $receiptId: " . $e->getMessage());
             http_response_code(400);
             echo json_encode([
                 'status' => 'error',

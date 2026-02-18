@@ -93,8 +93,8 @@ INSERT INTO companies (
   is_active,
   status
 ) VALUES (
-  'Medical Supplies Kenya Ltd',
-  'info@medplusafrica.com',
+  'Helix General Hardware',
+  'info@helixgeneralhardware.com',
   'Tel: 0741 207 690/0780 165 490',
   'P.O Box 85988-00200, Nairobi, Kenya',
   'Nairobi',

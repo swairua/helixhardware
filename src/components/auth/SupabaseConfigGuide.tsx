@@ -33,7 +33,7 @@ export function SupabaseConfigGuide() {
   };
 
   const adminCredentials = {
-    email: 'admin@medplusafrica.com',
+    email: 'admin@helixgeneralhardware.com',
     password: 'Medplus#2025!'
   };
 
@@ -55,7 +55,7 @@ INSERT INTO auth.users (
 ) VALUES (
   gen_random_uuid(),
   '00000000-0000-0000-0000-000000000000',
-  'admin@medplusafrica.com',
+  'admin@helixgeneralhardware.com',
   crypt('Medplus#2025!', gen_salt('bf')),
   NOW(),
   NOW(),
@@ -82,7 +82,7 @@ INSERT INTO public.profiles (
 ) 
 SELECT 
   id,
-  'admin@medplusafrica.com',
+  'admin@helixgeneralhardware.com',
   'System Administrator',
   'admin',
   'active',
@@ -91,7 +91,7 @@ SELECT
   NOW(),
   NOW()
 FROM auth.users 
-WHERE email = 'admin@biolegendscientific.co.ke';`;
+WHERE email = 'admin@helixgeneralhardware.com';`;
 
   return (
     <div className="space-y-6">

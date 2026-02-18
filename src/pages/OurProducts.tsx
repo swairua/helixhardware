@@ -42,7 +42,7 @@ export default function OurProducts() {
           name: cat.name,
           description: cat.description || `${cat.name} collection`,
           image: undefined,
-          url: `https://medplusafrica.com/products/${cat.slug}`,
+          url: `https://helixgeneralhardware.com/products/${cat.slug}`,
         }))
       );
       addStructuredData(collectionSchema);
@@ -69,7 +69,7 @@ export default function OurProducts() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-3xl">
             <p className="text-base sm:text-base md:text-lg text-gray-700 leading-relaxed">
-              Medplus Africa offers a comprehensive range of hospital consumables, medical equipment, and furniture to meet all your healthcare facility needs. Our products are sourced from trusted manufacturers and meet international quality standards.
+              Helix General Hardware offers a comprehensive range of hospital consumables, equipment, and supplies to meet all your facility needs. Our products are sourced from trusted manufacturers and meet international quality standards.
             </p>
           </div>
         </div>

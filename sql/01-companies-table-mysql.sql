@@ -116,8 +116,8 @@ DELIMITER ;
 -- Insert a new company
 -- INSERT INTO companies (name, email, phone, address, city, country, currency, logo_url, primary_color)
 -- VALUES (
---   'Medical Supplies Inc',
---   'info@medplusafrica.com',
+--   'Helix General Hardware',
+--   'info@helixgeneralhardware.com',
 --   'Tel: 0741 207 690/0780 165 490',
 --   'P.O Box 85988-00200\nNairobi, Kenya',
 --   'Nairobi',

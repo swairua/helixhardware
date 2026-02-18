@@ -171,7 +171,7 @@ export function handleAuthError(error: Error | any): AuthErrorInfo {
 }
 
 export const DEFAULT_ADMIN_CREDENTIALS = {
-  email: 'admin@medplusafrica.com',
+  email: 'admin@helixgeneralhardware.com',
   password: 'Medplus#2025!'
 };
 

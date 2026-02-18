@@ -24,8 +24,8 @@ INSERT INTO companies (
   is_active,
   status
 ) VALUES (
-  'Medical Supplies Kenya Ltd',
-  'info@medplusafrica.com',
+  'Helix General Hardware',
+  'info@helixgeneralhardware.com',
   'Tel: 0741 207 690/0780 165 490',
   'P.O Box 85988-00200
 Nairobi, Kenya',
@@ -47,7 +47,7 @@ RETURNING id, name, email;
 -- =====================================================
 
 INSERT INTO tax_settings (company_id, name, rate, tax_number, is_active, is_default)
-SELECT 
+SELECT
   id,
   'VAT (16%)',
   16.00,
@@ -55,7 +55,7 @@ SELECT
   true,
   true
 FROM companies
-WHERE name = 'Medical Supplies Kenya Ltd'
+WHERE name = 'Helix General Hardware'
 LIMIT 1;
 
 -- =====================================================
@@ -63,14 +63,14 @@ LIMIT 1;
 -- =====================================================
 
 INSERT INTO payment_methods (company_id, code, name, icon_name, is_active)
-SELECT 
+SELECT
   id,
   'mpesa',
   'M-Pesa',
   'Smartphone',
   true
 FROM companies
-WHERE name = 'Medical Supplies Kenya Ltd'
+WHERE name = 'Helix General Hardware'
 LIMIT 1
 ON CONFLICT (company_id, code) DO NOTHING;
 
@@ -99,11 +99,15 @@ WHERE c.is_active = true
 GROUP BY c.id, c.name, c.email, c.phone, c.city, c.country, c.currency, c.primary_color, c.is_active, c.created_at
 ORDER BY c.created_at DESC;
 
+-- Alternative query for Helix General Hardware specifically
+-- WHERE c.name = 'Helix General Hardware' AND c.is_active = true
+-- GROUP BY c.id, c.name, c.email, c.phone, c.city, c.country, c.currency, c.primary_color, c.is_active, c.created_at;
+
 -- =====================================================
 -- 5. VIEW COMPANY WITH TAX SETTINGS
 -- =====================================================
 
-SELECT 
+SELECT
   c.id,
   c.name,
   c.email,
@@ -130,9 +134,9 @@ SELECT
   c.updated_at
 FROM companies c
 LEFT JOIN tax_settings t ON c.id = t.company_id AND t.is_active = true
-WHERE c.name = 'Medical Supplies Kenya Ltd'
-GROUP BY c.id, c.name, c.email, c.phone, c.address, c.city, c.country, 
-         c.registration_number, c.currency, c.fiscal_year_start, c.logo_url, 
+WHERE c.name = 'Helix General Hardware'
+GROUP BY c.id, c.name, c.email, c.phone, c.address, c.city, c.country,
+         c.registration_number, c.currency, c.fiscal_year_start, c.logo_url,
          c.primary_color, c.is_active, c.created_at, c.updated_at;
 
 -- =====================================================
@@ -140,12 +144,12 @@ GROUP BY c.id, c.name, c.email, c.phone, c.address, c.city, c.country,
 -- =====================================================
 
 UPDATE companies
-SET 
-  email = 'newemail@medplusafrica.com',
+SET
+  email = 'newemail@helixgeneralhardware.com',
   phone = 'Tel: 0700 000000',
   primary_color = '#2563EB',
   updated_at = NOW()
-WHERE name = 'Medical Supplies Kenya Ltd';
+WHERE name = 'Helix General Hardware';
 
 -- =====================================================
 -- 7. UPDATE COMPANY LOGO
@@ -174,7 +178,7 @@ INSERT INTO customers (
   payment_terms,
   is_active
 )
-SELECT 
+SELECT
   id,
   'CUST001',
   'Simon Gichuki',
@@ -187,7 +191,7 @@ SELECT
   14,
   true
 FROM companies
-WHERE name = 'Medical Supplies Kenya Ltd'
+WHERE name = 'Helix General Hardware'
 LIMIT 1;
 
 -- =====================================================
@@ -210,7 +214,7 @@ SELECT
 FROM customers c
 LEFT JOIN invoices i ON c.id = i.customer_id
 WHERE c.company_id = (
-  SELECT id FROM companies WHERE name = 'Medical Supplies Kenya Ltd'
+  SELECT id FROM companies WHERE name = 'Helix General Hardware'
 )
 GROUP BY c.id, c.customer_code, c.name, c.email, c.phone, c.city, c.credit_limit, c.payment_terms, c.is_active, c.created_at
 ORDER BY c.created_at DESC;
@@ -233,7 +237,7 @@ INSERT INTO invoices (
   status,
   notes
 )
-SELECT 
+SELECT
   co.id as company_id,
   cu.id as customer_id,
   'INV001',
@@ -248,7 +252,7 @@ SELECT
   'Initial invoice'
 FROM companies co
 CROSS JOIN customers cu
-WHERE co.name = 'Medical Supplies Kenya Ltd' 
+WHERE co.name = 'Helix General Hardware'
   AND cu.customer_code = 'CUST001'
 LIMIT 1
 RETURNING id, invoice_number, total_amount;
@@ -269,7 +273,7 @@ INSERT INTO payments (
   notes,
   status
 )
-SELECT 
+SELECT
   co.id,
   cu.id,
   i.id,
@@ -283,7 +287,7 @@ SELECT
 FROM companies co
 CROSS JOIN customers cu
 CROSS JOIN invoices i
-WHERE co.name = 'Medical Supplies Kenya Ltd'
+WHERE co.name = 'Helix General Hardware'
   AND cu.customer_code = 'CUST001'
   AND i.invoice_number = 'INV001'
 LIMIT 1
@@ -305,7 +309,7 @@ SET
   updated_at = NOW()
 WHERE invoice_number = 'INV001'
   AND company_id = (
-    SELECT id FROM companies WHERE name = 'Medical Supplies Kenya Ltd'
+    SELECT id FROM companies WHERE name = 'Helix General Hardware'
   );
 
 -- =====================================================
@@ -331,7 +335,7 @@ SELECT
 FROM invoices i
 JOIN customers c ON i.customer_id = c.id
 WHERE i.company_id = (
-  SELECT id FROM companies WHERE name = 'Medical Supplies Kenya Ltd'
+  SELECT id FROM companies WHERE name = 'Helix General Hardware'
 )
 AND i.balance_due > 0
 AND i.status != 'cancelled'
@@ -353,7 +357,7 @@ INSERT INTO products (
   reorder_level,
   is_active
 )
-SELECT 
+SELECT
   id,
   'PROD001',
   'Medical Gloves (Box of 100)',
@@ -365,7 +369,7 @@ SELECT
   100,
   true
 FROM companies
-WHERE name = 'Medical Supplies Kenya Ltd'
+WHERE name = 'Helix General Hardware'
 LIMIT 1;
 
 -- =====================================================
@@ -428,22 +432,22 @@ DROP TABLE IF EXISTS companies CASCADE;
 -- =====================================================
 
 UPDATE companies
-SET 
+SET
   is_active = false,
   status = 'archived',
   updated_at = NOW()
-WHERE name = 'Medical Supplies Kenya Ltd';
+WHERE name = 'Helix General Hardware';
 
 -- =====================================================
 -- 19. REACTIVATE COMPANY
 -- =====================================================
 
 UPDATE companies
-SET 
+SET
   is_active = true,
   status = 'active',
   updated_at = NOW()
-WHERE name = 'Medical Supplies Kenya Ltd';
+WHERE name = 'Helix General Hardware';
 
 -- =====================================================
 -- 20. EXPORT COMPANY DATA (for backup/audit)

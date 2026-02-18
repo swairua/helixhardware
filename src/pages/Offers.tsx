@@ -12,14 +12,14 @@ export default function Offers() {
   useSEO(
     {
       title: 'Special Offers & Promotions',
-      description: 'Exclusive deals and promotions on quality medical products and equipment. Save on hospital supplies, furniture, and more.',
-      keywords: 'special offers, medical supplies discount, hospital equipment sale, promotions',
-      url: 'https://medplusafrica.com/offers',
+      description: 'Exclusive deals and promotions on quality hardware and supplies. Save on general supplies, equipment, and more.',
+      keywords: 'special offers, hardware discount, equipment sale, promotions',
+      url: 'https://helixgeneralhardware.com/offers',
     },
     generateWebPageSchema({
       title: 'Special Offers & Promotions',
-      description: 'Exclusive deals on quality medical products and equipment',
-      url: 'https://medplusafrica.com/offers',
+      description: 'Exclusive deals on quality hardware and equipment',
+      url: 'https://helixgeneralhardware.com/offers',
     })
   );
 

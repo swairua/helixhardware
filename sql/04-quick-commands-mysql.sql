@@ -25,8 +25,8 @@ INSERT INTO companies (
   is_active,
   status
 ) VALUES (
-  'Medical Supplies Kenya Ltd',
-  'info@medplusafrica.com',
+  'Helix General Hardware',
+  'info@helixgeneralhardware.com',
   'Tel: 0741 207 690/0780 165 490',
   'P.O Box 85988-00200\nNairobi, Kenya',
   'Nairobi',
@@ -54,7 +54,7 @@ SELECT
   true,
   true
 FROM companies
-WHERE name = 'Medical Supplies Kenya Ltd'
+WHERE name = 'Helix General Hardware'
 LIMIT 1;
 
 -- =====================================================
@@ -139,11 +139,11 @@ GROUP BY c.id, c.name, c.email, c.phone, c.address, c.city, c.country,
 -- =====================================================
 
 UPDATE companies
-SET 
-  email = 'newemail@medplusafrica.com',
+SET
+  email = 'newemail@helixgeneralhardware.com',
   phone = 'Tel: 0700 000000',
   primary_color = '#2563EB'
-WHERE name = 'Medical Supplies Kenya Ltd';
+WHERE name = 'Helix General Hardware';
 
 -- =====================================================
 -- 7. UPDATE COMPANY LOGO
@@ -184,7 +184,7 @@ SELECT
   14,
   true
 FROM companies
-WHERE name = 'Medical Supplies Kenya Ltd'
+WHERE name = 'Helix General Hardware'
 LIMIT 1;
 
 -- =====================================================
@@ -359,7 +359,7 @@ SELECT
   100,
   true
 FROM companies
-WHERE name = 'Medical Supplies Kenya Ltd'
+WHERE name = 'Helix General Hardware'
 LIMIT 1;
 
 -- =====================================================

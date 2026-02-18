@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 import { safeAuthOperation, isRateLimited, getRateLimitTimeRemaining, clearAuthTokens } from '@/utils/authHelpers';
 
 const ADMIN_CREDENTIALS = {
-  email: 'admin@medplusafrica.com',
+  email: 'admin@helixgeneralhardware.com',
   password: 'Medplus#2025!',
   fullName: 'System Administrator'
 };
@@ -375,7 +375,7 @@ export function AutoAdminSetup() {
         <CheckCircle className="h-4 w-4" />
         <AlertDescription>
           <strong>Admin user is ready!</strong> You can log in with:<br />
-          <code className="text-sm bg-green-100 px-1 rounded">admin@medplusafrica.com</code>
+          <code className="text-sm bg-green-100 px-1 rounded">admin@helixgeneralhardware.com</code>
         </AlertDescription>
       </Alert>
     );
@@ -471,7 +471,7 @@ export function AutoAdminSetup() {
               <div className="bg-muted/50 p-3 rounded-md">
                 <p className="text-xs font-medium text-muted-foreground mb-1">Default Admin Credentials:</p>
                 <div className="text-xs text-muted-foreground space-y-1">
-                  <p><strong>Email:</strong> admin@medplusafrica.com</p>
+                  <p><strong>Email:</strong> admin@helixgeneralhardware.com</p>
                   <p><strong>Password:</strong> Medplus#2025!</p>
                 </div>
               </div>

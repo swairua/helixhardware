@@ -160,8 +160,8 @@ CREATE TRIGGER trigger_update_tax_settings_updated_at
 -- Insert a new company
 -- INSERT INTO companies (name, email, phone, address, city, country, currency, logo_url, primary_color)
 -- VALUES (
---   'Medical Supplies Inc',
---   'info@medplusafrica.com',
+--   'Helix General Hardware',
+--   'info@helixgeneralhardware.com',
 --   'Tel: 0741 207 690/0780 165 490',
 --   'P.O Box 85988-00200\nNairobi, Kenya',
 --   'Nairobi',
@@ -175,5 +175,5 @@ CREATE TRIGGER trigger_update_tax_settings_updated_at
 -- INSERT INTO tax_settings (company_id, name, rate, tax_number, is_active, is_default)
 -- SELECT id, 'VAT (16%)', 16.00, 'P051658002D', true, true
 -- FROM companies
--- WHERE name = 'Medical Supplies Inc'
+-- WHERE name = 'Helix General Hardware'
 -- LIMIT 1;

@@ -372,7 +372,7 @@ export default function Invoices() {
 
     try {
       // Create email content using dynamic company name
-      const companyName = currentCompany?.name || '>> Medical Supplies';
+      const companyName = currentCompany?.name || 'Helix General Hardware';
       const subject = `Invoice ${invoiceData.invoice_number} from ${companyName}`;
       const body = `Dear ${invoiceData.customers.name},
 
@@ -393,7 +393,7 @@ If you have any questions about this invoice, please don't hesitate to contact u
 Best regards,
 ${companyName}
 Tel: ${currentCompany?.phone || '0741 207 690/0780 165 490'}
-Email: ${currentCompany?.email || 'info@medplusafrica.com'}`;
+Email: ${currentCompany?.email || 'info@helixgeneralhardware.com'}`;
 
       // Open email client with pre-filled content
       const emailUrl = `mailto:${invoiceData.customers.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;

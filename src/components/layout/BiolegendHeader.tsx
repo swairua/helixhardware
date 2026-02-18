@@ -4,8 +4,8 @@ import { useCurrentCompany } from '@/contexts/CompanyContext';
 
 export function BiolegendHeader() {
   const { currentCompany } = useCurrentCompany();
-  const companyName = currentCompany?.name || '>> MEDICAL SUPPLIES';
-  const companyEmail = currentCompany?.email || 'info@medplusafrica.com';
+  const companyName = currentCompany?.name || 'Helix General Hardware';
+  const companyEmail = currentCompany?.email || 'info@helixgeneralhardware.com';
 
   return (
     <div className="flex items-center justify-between p-4 bg-primary text-primary-foreground">
@@ -26,8 +26,8 @@ export function BiolegendHeader() {
 
 export function BiolegendCompanyInfo() {
   const { currentCompany } = useCurrentCompany();
-  const companyName = currentCompany?.name || '>> MEDICAL SUPPLIES';
-  const companyEmail = currentCompany?.email || 'info@medplusafrica.com';
+  const companyName = currentCompany?.name || 'Helix General Hardware';
+  const companyEmail = currentCompany?.email || 'info@helixgeneralhardware.com';
 
   return (
     <div className="space-y-2">

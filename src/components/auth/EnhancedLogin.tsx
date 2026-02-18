@@ -30,7 +30,7 @@ export function EnhancedLogin() {
   }
 
   // Get company name from fetched data, fallback to default if not available
-  const companyName = company?.name || '>> Medical Supplies';
+  const companyName = company?.name || 'Helix General Hardware';
 
   const validateForm = () => {
     const errors: Record<string, string> = {};

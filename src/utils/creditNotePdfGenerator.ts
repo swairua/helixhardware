@@ -41,12 +41,12 @@ export interface CompanyData {
 
 // Default company details (fallback) - logo will be determined dynamically
 const DEFAULT_COMPANY: CompanyData = {
-  name: 'Medical Supplies',
+  name: 'Helix General Hardware',
   address: '',
   city: 'Nairobi',
   country: 'Kenya',
   phone: '',
-  email: 'info@medplusafrica.com',
+  email: 'info@helixgeneralhardware.com',
   logo_url: 'https://cdn.builder.io/api/v1/image/assets%2Ffd1c9d5781fc4f20b6ad16683f5b85b3%2F274fc62c033e464584b0f50713695127?format=webp&width=800'
 };
 

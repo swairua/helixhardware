@@ -219,9 +219,9 @@ export default function Quotations() {
 
     try {
       // Create email content using dynamic company details
-      const companyName = currentCompany?.name || '>> Medical Supplies';
+      const companyName = currentCompany?.name || 'Helix General Hardware';
       const companyPhone = currentCompany?.phone || '0741 207 690/0780 165 490';
-      const companyEmail = currentCompany?.email || 'info@medplusafrica.com';
+      const companyEmail = currentCompany?.email || 'info@helixgeneralhardware.com';
 
       const subject = `Quotation ${quotation.quotation_number} from ${companyName}`;
       const body = `Dear ${quotation.customers.name},

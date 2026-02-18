@@ -12,14 +12,14 @@ export default function Media() {
   useSEO(
     {
       title: 'Media Center',
-      description: 'Latest news, CME sessions, and events from Medplus Africa. Stay updated on industry news and healthcare developments.',
+      description: 'Latest news, CME sessions, and events from Helix General Hardware. Stay updated on industry news and healthcare developments.',
       keywords: 'healthcare news, medical news, healthcare events, CME sessions',
-      url: 'https://medplusafrica.com/media',
+      url: 'https://helixgeneralhardware.com/media',
     },
     generateWebPageSchema({
       title: 'Media Center - News & Events',
       description: 'News, CME sessions, and events',
-      url: 'https://medplusafrica.com/media',
+      url: 'https://helixgeneralhardware.com/media',
     })
   );
 
@@ -31,7 +31,7 @@ export default function Media() {
     {
       id: 1,
       date: 'January 15, 2025',
-      title: '&gt;&gt; Medical Supplies Expands Operations to East Africa',
+      title: 'Helix General Hardware Expands Operations to East Africa',
       excerpt: 'We are excited to announce the opening of our new distribution center in Kampala, Uganda...',
       category: 'News'
     },
@@ -52,7 +52,7 @@ export default function Media() {
     {
       id: 4,
       date: 'December 15, 2024',
-      title: '&gt;&gt; Medical Supplies Achieves ISO 9001 Certification',
+      title: 'Helix General Hardware Achieves ISO 9001 Certification',
       excerpt: 'We are proud to announce that we have successfully obtained ISO 9001 certification...',
       category: 'News'
     },
@@ -96,7 +96,7 @@ export default function Media() {
     {
       id: 2,
       date: 'February 28, 2025',
-      title: '&gt;&gt; Medical Supplies Product Exhibition',
+      title: 'Helix General Hardware Product Exhibition',
       location: 'Kenyatta International Convention Center',
       description: 'Showcase of our latest products and solutions in medical supplies and equipment.',
     },

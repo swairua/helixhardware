@@ -1,12 +1,12 @@
 /**
- * Email templates and signatures for >> Medical Supplies
+ * Email templates and signatures for Helix General Hardware
  */
 
 export const BIOLEGEND_CONTACT = {
-  company: '&gt;&gt; Medical Supplies',
+  company: 'Helix General Hardware',
   address: 'P.O. Box 85988-00200, Nairobi, Eastern Bypass, Membley',
   phone: '0741207690/0780165490',
-  email: 'info@medplusafrica.com'
+  email: 'info@helixgeneralhardware.com'
 };
 
 export const generateBiolegendEmailSignature = () => {

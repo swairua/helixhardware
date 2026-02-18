@@ -29,16 +29,16 @@ interface CompanyConfigContextType {
 
 const defaultConfig: CompanyConfig = {
   id: 'default',
-  name: '>> Medical Supplies',
-  email: 'info@medplusafrica.com',
+  name: 'Helix General Hardware',
+  email: 'info@helixgeneralhardware.com',
   phone: '+254 741 207 690',
   address: 'P.O. Box 85988-00200, Nairobi, Eastern Bypass, Membley',
   city: 'Nairobi',
   country: 'Kenya',
   currency: 'KES',
-  logo_url: 'https://medplusafrica.com/assets/medplus-logo.webp',
+  logo_url: 'https://helixgeneralhardware.com/assets/helix-logo.webp',
   primary_color: '#FF8C42',
-  description: 'Trusted distributor of critical care supplies, hospital consumables, and furniture across Africa.',
+  description: 'Trusted supplier of general hardware and supplies.',
 };
 
 const CompanyConfigContext = createContext<CompanyConfigContextType | undefined>(undefined);

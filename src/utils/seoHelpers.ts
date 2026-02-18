@@ -16,11 +16,11 @@ export interface SEOMetadata {
 
 // Default site config - used as fallback if company config is not available
 const DEFAULT_SITE_CONFIG = {
-  siteName: '&gt;&gt; Medical Supplies',
-  url: 'https://medplusafrica.com',
-  logo: 'https://medplusafrica.com/assets/medplus-logo.webp',
-  description: 'Trusted distributor of critical care supplies, hospital consumables, and furniture across Africa.',
-  email: 'info@medplusafrica.com',
+  siteName: 'Helix General Hardware',
+  url: 'https://helixgeneralhardware.com',
+  logo: 'https://helixgeneralhardware.com/assets/helix-logo.webp',
+  description: 'Trusted supplier of general hardware and supplies.',
+  email: 'info@helixgeneralhardware.com',
   phone: '+254 741 207 690',
   address: 'P.O. Box 85988-00200, Nairobi, Eastern Bypass, Membley',
 };
@@ -67,10 +67,7 @@ export const generateOrganizationSchema = (companyConfig?: CompanyConfig | null)
       streetAddress: config.address,
       addressCountry: 'KE',
     },
-    sameAs: [
-      'https://www.facebook.com/medplusafrica',
-      'https://www.instagram.com/medplusafrica',
-    ],
+    sameAs: [],
   };
 };
 

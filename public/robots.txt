@@ -1,4 +1,4 @@
-# >> Medical Supplies - Robots.txt for Search Engine Crawlers
+# Helix General Hardware - Robots.txt for Search Engine Crawlers
 # This file defines crawling rules for search engines
 
 # Default rules for all robots
@@ -37,4 +37,4 @@ User-agent: *
 Disallow: /*.pdf$
 
 # Sitemap location
-Sitemap: https://medplusafrica.com/sitemap.xml
+Sitemap: https://helixgeneralhardware.com/sitemap.xml

@@ -3,7 +3,7 @@
  * Run this during build or deploy to create public/sitemap.xml
  */
 
-const SITE_URL = 'https://medplusafrica.com';
+const SITE_URL = 'https://helixgeneralhardware.com';
 const STATIC_ROUTES = [
   { path: '/', priority: 1.0, changefreq: 'daily' },
   { path: '/about-us', priority: 0.9, changefreq: 'monthly' },

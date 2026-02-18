@@ -87,12 +87,12 @@ interface CompanyDetails {
 
 // Default company details (fallback) - logo will be determined dynamically
 const DEFAULT_COMPANY: CompanyDetails = {
-  name: 'Medical Supplies',
+  name: 'Helix General Hardware',
   address: '',
   city: 'Nairobi',
   country: 'Kenya',
   phone: '',
-  email: 'info@medplusafrica.com',
+  email: 'info@helixgeneralhardware.com',
   logo_url: 'https://cdn.builder.io/api/v1/image/assets%2Ffd1c9d5781fc4f20b6ad16683f5b85b3%2F274fc62c033e464584b0f50713695127?format=webp&width=800',
   primary_color: '#FF8C42'
 };
@@ -792,7 +792,7 @@ export const generatePDF = (data: DocumentData, downloadAsFile: boolean = true) 
         ${data.type === 'invoice' ? `
         <div class="bank-details">
           <div class="section-subtitle">Banking Details</div>
-          <div class="notes-content">Account Name: MEDPLUS AFRICA LIMITED • Bank: ABSA BANK • Account No: 2047138798 • Branch: RONGAI • Bank Code: 03 • Branch Code: 52 • Swift Code: BARCKENX • Paybill No: 303030</div>
+          <div class="notes-content">Account Name: HELIX GENERAL HARDWARE • Please contact info@helixgeneralhardware.com for banking details</div>
         </div>
         ` : ''}
 

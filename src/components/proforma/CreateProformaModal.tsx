@@ -133,7 +133,7 @@ export const CreateProformaModal = ({
       description: product.description || '',
       quantity: 1,
       unit_price: product.selling_price,
-      tax_percentage: defaultTaxRate,
+      tax_percentage: 0,
       tax_amount: 0,
       tax_inclusive: false,
       line_total: 0,
@@ -251,9 +251,9 @@ export const CreateProformaModal = ({
         unit_price: item.unit_price,
         discount_percentage: 0,
         discount_amount: 0,
-        tax_percentage: item.tax_percentage,
-        tax_amount: item.tax_amount,
-        tax_inclusive: item.tax_inclusive,
+        tax_percentage: 0,
+        tax_amount: 0,
+        tax_inclusive: false,
         line_total: item.line_total,
       }));
 
@@ -465,8 +465,6 @@ export const CreateProformaModal = ({
                       <TableHead>Description</TableHead>
                       <TableHead>Qty</TableHead>
                       <TableHead>Unit Price</TableHead>
-                      <TableHead>Tax %</TableHead>
-                      <TableHead>Tax Incl.</TableHead>
                       <TableHead>Total</TableHead>
                       <TableHead></TableHead>
                     </TableRow>
@@ -503,24 +501,6 @@ export const CreateProformaModal = ({
                             className="w-24"
                           />
                         </TableCell>
-                        <TableCell>
-                          <Input
-                            type="number"
-                            value={item.tax_percentage}
-                            onChange={(e) => updateItem(item.id, 'tax_percentage', parseFloat(e.target.value) || 0)}
-                            min="0"
-                            max="100"
-                            step="0.01"
-                            className="w-20"
-                            disabled={item.tax_inclusive}
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Checkbox
-                            checked={item.tax_inclusive}
-                            onCheckedChange={(checked) => updateItem(item.id, 'tax_inclusive', checked)}
-                          />
-                        </TableCell>
                         <TableCell>${item.line_total.toFixed(2)}</TableCell>
                         <TableCell>
                           <Button
@@ -544,10 +524,6 @@ export const CreateProformaModal = ({
                   <div className="flex justify-between">
                     <span>Subtotal:</span>
                     <span>${subtotal.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Tax:</span>
-                    <span>${totalTax.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between font-semibold text-lg border-t pt-2">
                     <span>Total:</span>

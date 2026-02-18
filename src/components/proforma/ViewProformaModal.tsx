@@ -231,8 +231,6 @@ export const ViewProformaModal = ({
                       <TableHead>Description</TableHead>
                       <TableHead>Quantity</TableHead>
                       <TableHead>Unit Price</TableHead>
-                      <TableHead>Tax %</TableHead>
-                      <TableHead>Tax Amount</TableHead>
                       <TableHead className="text-right">Total</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -243,8 +241,6 @@ export const ViewProformaModal = ({
                         <TableCell>{item.description}</TableCell>
                         <TableCell>{item.quantity}</TableCell>
                         <TableCell>${Number(item.unit_price || 0).toFixed(2)}</TableCell>
-                        <TableCell>{item.tax_percentage}%</TableCell>
-                        <TableCell>${Number(item.tax_amount || 0).toFixed(2)}</TableCell>
                         <TableCell className="text-right">${Number(item.line_total || 0).toFixed(2)}</TableCell>
                       </TableRow>
                     ))}
@@ -258,10 +254,6 @@ export const ViewProformaModal = ({
                   <div className="flex justify-between">
                     <span className="text-sm">Subtotal:</span>
                     <span className="text-sm">${proforma.subtotal?.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm">Tax:</span>
-                    <span className="text-sm">${Number(proforma.tax_amount || 0).toFixed(2)}</span>
                   </div>
                   <Separator />
                   <div className="flex justify-between font-semibold">

@@ -94,9 +94,9 @@ export function EditQuotationModal({ open, onOpenChange, onSuccess, quotation }:
         quantity: item.quantity || 0,
         unit_price: item.unit_price || 0,
         discount_percentage: item.discount_percentage || 0,
-        tax_percentage: item.tax_percentage || 16,
-        tax_amount: item.tax_amount || 0,
-        tax_inclusive: item.tax_inclusive || false,
+        tax_percentage: 0,
+        tax_amount: 0,
+        tax_inclusive: false,
         line_total: item.line_total || 0,
       }));
       
@@ -272,9 +272,9 @@ export function EditQuotationModal({ open, onOpenChange, onSuccess, quotation }:
         quantity: item.quantity,
         unit_price: item.unit_price,
         discount_percentage: item.discount_percentage || 0,
-        tax_percentage: item.tax_percentage || 0,
-        tax_amount: item.tax_amount || 0,
-        tax_inclusive: item.tax_inclusive || false,
+        tax_percentage: 0,
+        tax_amount: 0,
+        tax_inclusive: false,
         line_total: item.line_total,
       }));
 
@@ -512,8 +512,6 @@ export function EditQuotationModal({ open, onOpenChange, onSuccess, quotation }:
                     <TableHead>Product</TableHead>
                     <TableHead>Qty</TableHead>
                     <TableHead>Unit Price</TableHead>
-                    <TableHead>VAT %</TableHead>
-                    <TableHead>VAT Incl.</TableHead>
                     <TableHead>Line Total</TableHead>
                     <TableHead></TableHead>
                   </TableRow>
@@ -545,25 +543,6 @@ export function EditQuotationModal({ open, onOpenChange, onSuccess, quotation }:
                           step="0.01"
                         />
                       </TableCell>
-                      <TableCell>
-                        <Input
-                          type="number"
-                          value={item.tax_percentage}
-                          onChange={(e) => updateItemVAT(item.id, parseFloat(e.target.value) || 0)}
-                          className="w-20"
-                          min="0"
-                          max="100"
-                          step="0.1"
-                          placeholder="0"
-                          disabled={item.tax_inclusive}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Checkbox
-                          checked={item.tax_inclusive}
-                          onCheckedChange={(checked) => updateItemVATInclusive(item.id, !!checked)}
-                        />
-                      </TableCell>
                       <TableCell className="font-semibold">
                         {formatCurrency(item.line_total)}
                       </TableCell>
@@ -591,10 +570,6 @@ export function EditQuotationModal({ open, onOpenChange, onSuccess, quotation }:
                     <div className="flex justify-between">
                       <span>Subtotal:</span>
                       <span className="font-semibold">{formatCurrency(subtotal)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Tax:</span>
-                      <span className="font-semibold">{formatCurrency(taxAmount)}</span>
                     </div>
                     <div className="flex justify-between text-lg border-t pt-2">
                       <span className="font-bold">Total:</span>

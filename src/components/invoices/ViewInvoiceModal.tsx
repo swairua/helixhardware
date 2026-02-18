@@ -276,7 +276,6 @@ export function ViewInvoiceModal({
                     <TableHead>Qty</TableHead>
                     <TableHead>Unit Price</TableHead>
                     <TableHead>Discount %</TableHead>
-                    <TableHead>Tax %</TableHead>
                     <TableHead className="text-right">Line Total</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -296,7 +295,6 @@ export function ViewInvoiceModal({
                       <TableCell>{item.quantity}</TableCell>
                       <TableCell>{formatCurrency(item.unit_price)}</TableCell>
                       <TableCell>{item.discount_percentage || 0}%</TableCell>
-                      <TableCell>{item.tax_percentage || 0}%</TableCell>
                       <TableCell className="text-right font-semibold">
                         {formatCurrency(item.line_total)}
                       </TableCell>
@@ -313,10 +311,6 @@ export function ViewInvoiceModal({
                   <div className="flex justify-between">
                     <span>Subtotal:</span>
                     <span className="font-semibold">{formatCurrency(invoice.subtotal || 0)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Tax:</span>
-                    <span className="font-semibold">{formatCurrency(invoice.tax_amount || 0)}</span>
                   </div>
                   <div className="flex justify-between text-lg border-t pt-2">
                     <span className="font-bold">Total:</span>

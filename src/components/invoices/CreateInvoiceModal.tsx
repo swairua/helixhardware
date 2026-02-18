@@ -130,9 +130,9 @@ export function CreateInvoiceModal({ open, onOpenChange, onSuccess, preSelectedC
       quantity: 1,
       unit_price: price,
       discount_before_vat: 0,
-      tax_percentage: defaultTaxRate, // Auto-apply default tax rate
+      tax_percentage: 0, // Set to 0% (no tax)
       tax_amount: 0,
-      tax_inclusive: true, // Default to tax inclusive for easier pricing
+      tax_inclusive: false, // Default to not tax inclusive
       line_total: price
     };
 
@@ -660,8 +660,6 @@ export function CreateInvoiceModal({ open, onOpenChange, onSuccess, preSelectedC
                     <TableHead>Qty</TableHead>
                     <TableHead>Unit Price</TableHead>
                     <TableHead>Disc. Before VAT (%)</TableHead>
-                    <TableHead>VAT %</TableHead>
-                    <TableHead>VAT Incl.</TableHead>
                     <TableHead>Line Total</TableHead>
                     <TableHead></TableHead>
                   </TableRow>
@@ -703,25 +701,6 @@ export function CreateInvoiceModal({ open, onOpenChange, onSuccess, preSelectedC
                           placeholder="0.00"
                         />
                       </TableCell>
-                      <TableCell>
-                        <Input
-                          type="number"
-                          value={item.tax_percentage}
-                          onChange={(e) => updateItemTax(item.id, parseFloat(e.target.value) || 0)}
-                          className="w-20"
-                          min="0"
-                          max="100"
-                          step="0.1"
-                          placeholder="0"
-                          disabled={item.tax_inclusive}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Checkbox
-                          checked={item.tax_inclusive}
-                          onCheckedChange={(checked) => updateItemTaxInclusive(item.id, !!checked)}
-                        />
-                      </TableCell>
                       <TableCell className="font-semibold">
                         {formatCurrency(item.line_total)}
                       </TableCell>
@@ -759,10 +738,6 @@ export function CreateInvoiceModal({ open, onOpenChange, onSuccess, preSelectedC
                     <div className="flex justify-between">
                       <span>After Discount:</span>
                       <span className="font-semibold">{formatCurrency(subtotal)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Tax:</span>
-                      <span className="font-semibold">{formatCurrency(taxAmount)}</span>
                     </div>
                     <div className="flex justify-between text-lg border-t pt-2">
                       <span className="font-bold">Total:</span>

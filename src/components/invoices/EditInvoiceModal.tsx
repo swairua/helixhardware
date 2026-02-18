@@ -115,9 +115,9 @@ export function EditInvoiceModal({ open, onOpenChange, onSuccess, invoice }: Edi
         unit_price: item.unit_price || 0,
         discount_percentage: item.discount_percentage || 0,
         discount_before_vat: item.discount_before_vat || 0,
-        tax_percentage: item.tax_percentage || 16,
-        tax_amount: item.tax_amount || 0,
-        tax_inclusive: item.tax_inclusive || false,
+        tax_percentage: 0,
+        tax_amount: 0,
+        tax_inclusive: false,
         line_total: item.line_total || 0,
       }));
 
@@ -175,9 +175,9 @@ export function EditInvoiceModal({ open, onOpenChange, onSuccess, invoice }: Edi
               unit_price: item.unit_price || 0,
               discount_percentage: item.discount_percentage || 0,
               discount_before_vat: item.discount_before_vat || 0,
-              tax_percentage: item.tax_percentage || 16,
-              tax_amount: item.tax_amount || 0,
-              tax_inclusive: item.tax_inclusive || false,
+              tax_percentage: 0,
+              tax_amount: 0,
+              tax_inclusive: false,
               line_total: item.line_total || 0,
             }));
 
@@ -410,9 +410,9 @@ export function EditInvoiceModal({ open, onOpenChange, onSuccess, invoice }: Edi
         unit_price: item.unit_price,
         discount_percentage: item.discount_percentage,
         discount_before_vat: item.discount_before_vat || 0,
-        tax_percentage: item.tax_percentage,
-        tax_amount: item.tax_amount,
-        tax_inclusive: item.tax_inclusive,
+        tax_percentage: 0,
+        tax_amount: 0,
+        tax_inclusive: false,
         line_total: item.line_total
       }));
 
@@ -632,8 +632,6 @@ export function EditInvoiceModal({ open, onOpenChange, onSuccess, invoice }: Edi
                     <TableHead>Unit Price</TableHead>
                     <TableHead>Discount %</TableHead>
                     <TableHead>Disc. Before VAT</TableHead>
-                    <TableHead>Tax %</TableHead>
-                    <TableHead>Tax Incl.</TableHead>
                     <TableHead>Line Total</TableHead>
                     <TableHead></TableHead>
                   </TableRow>
@@ -686,24 +684,6 @@ export function EditInvoiceModal({ open, onOpenChange, onSuccess, invoice }: Edi
                           placeholder="0.00"
                         />
                       </TableCell>
-                      <TableCell>
-                        <Input
-                          type="number"
-                          value={item.tax_percentage}
-                          onChange={(e) => updateItemTax(item.id, parseFloat(e.target.value) || 0)}
-                          className="w-20"
-                          min="0"
-                          max="100"
-                          step="0.1"
-                          disabled={item.tax_inclusive}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Checkbox
-                          checked={item.tax_inclusive}
-                          onCheckedChange={(checked) => updateItemTaxInclusive(item.id, !!checked)}
-                        />
-                      </TableCell>
                       <TableCell className="font-semibold">
                         {formatCurrency(item.line_total)}
                       </TableCell>
@@ -731,10 +711,6 @@ export function EditInvoiceModal({ open, onOpenChange, onSuccess, invoice }: Edi
                     <div className="flex justify-between">
                       <span>Subtotal:</span>
                       <span className="font-semibold">{formatCurrency(subtotal)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Tax:</span>
-                      <span className="font-semibold">{formatCurrency(taxAmount)}</span>
                     </div>
                     <div className="flex justify-between text-lg border-t pt-2">
                       <span className="font-bold">Total:</span>

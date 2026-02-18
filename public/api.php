@@ -141,12 +141,12 @@ if (in_array($request_method, ['POST', 'PUT', 'PATCH'])) {
 }
 
 // Get request parameters
-$action = $_POST['action'] ?? ($_GET['action'] ?? null);
-$table = $_POST['table'] ?? ($_GET['table'] ?? null);
-$data = $_POST['data'] ?? ($json_body ?? []);
-$where = $_POST['where'] ?? ($_GET['where'] ?? null);
-$order_by = $_POST['order_by'] ?? ($_GET['order_by'] ?? null);
-$schema = $_POST['schema'] ?? ($_GET['schema'] ?? null);
+$action = $_POST['action'] ?? ($_GET['action'] ?? ($json_body['action'] ?? null));
+$table = $_POST['table'] ?? ($_GET['table'] ?? ($json_body['table'] ?? null));
+$data = $_POST['data'] ?? ($json_body['data'] ?? ($json_body ?? []));
+$where = $_POST['where'] ?? ($_GET['where'] ?? ($json_body['where'] ?? null));
+$order_by = $_POST['order_by'] ?? ($_GET['order_by'] ?? ($json_body['order_by'] ?? null));
+$schema = $_POST['schema'] ?? ($_GET['schema'] ?? ($json_body['schema'] ?? null));
 
 // Normalize action to always be a string (handle case where it's submitted as an array)
 // This handles cases where the same parameter name appears multiple times in the query string

@@ -183,7 +183,7 @@ export const ViewDeliveryNoteModal = ({
 
     try {
       setIsDeleting(true);
-      const response = await fetch('/api.php', {
+      const response = await fetch('https://helixgeneralhardware.com/api.php', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

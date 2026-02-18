@@ -166,6 +166,11 @@ export default function DeliveryNotes() {
 
     try {
       setIsDeleting(true);
+      console.log('[Delete] Attempting to delete delivery note:', {
+        id: noteToDelete.id,
+        number: noteToDelete.delivery_note_number || noteToDelete.delivery_number
+      });
+
       const response = await fetch('https://helixgeneralhardware.com/api.php', {
         method: 'POST',
         headers: {
@@ -179,23 +184,26 @@ export default function DeliveryNotes() {
         })
       });
 
-      if (response.ok) {
-        const result = await response.json();
-        if (result.status === 'success') {
-          const noteNumber = noteToDelete.delivery_note_number || noteToDelete.delivery_number;
-          toast.success(`Delivery note ${noteNumber} deleted successfully`);
-          retryDeliveryNotes();
-          setDeleteConfirmOpen(false);
-          setNoteToDelete(null);
-        } else {
-          toast.error('Failed to delete delivery note: ' + (result.message || 'Unknown error'));
-        }
+      console.log('[Delete] Response status:', response.status, response.statusText);
+
+      const result = await response.json();
+      console.log('[Delete] Response body:', result);
+
+      if (response.ok && result.status === 'success') {
+        const noteNumber = noteToDelete.delivery_note_number || noteToDelete.delivery_number;
+        toast.success(`Delivery note ${noteNumber} deleted successfully`);
+        retryDeliveryNotes();
+        setDeleteConfirmOpen(false);
+        setNoteToDelete(null);
       } else {
-        toast.error('Failed to delete delivery note');
+        const errorMessage = result.message || result.error || 'Unknown error';
+        console.error('[Delete] Error response:', errorMessage);
+        toast.error(`Failed to delete: ${errorMessage}`);
       }
     } catch (error) {
-      console.error('Error deleting delivery note:', error);
-      toast.error('Error deleting delivery note');
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error('[Delete] Exception:', errorMessage, error);
+      toast.error(`Delete failed: ${errorMessage}`);
     } finally {
       setIsDeleting(false);
     }

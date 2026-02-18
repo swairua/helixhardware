@@ -2580,6 +2580,7 @@ try {
             }
 
             // Return success response
+            http_response_code(200);
             echo json_encode([
                 'status' => 'success',
                 'message' => "Receipt $receiptNumber and all related records deleted successfully",
@@ -2591,12 +2592,18 @@ try {
                     'amount_reversed' => $receiptAmount
                 ]
             ]);
+            exit();
 
         } catch (Exception $e) {
             // Rollback on any error
             $conn->rollback();
             error_log("Receipt deletion transaction failed: " . $e->getMessage());
-            throw new Exception("Receipt deletion failed: " . $e->getMessage());
+            http_response_code(400);
+            echo json_encode([
+                'status' => 'error',
+                'message' => 'Receipt deletion failed: ' . $e->getMessage()
+            ]);
+            exit();
         }
     }
     else {

@@ -43,6 +43,7 @@ import { downloadInvoicePDF } from '@/utils/pdfGenerator';
 import { CreateDirectReceiptModalEnhanced } from '@/components/payments/CreateDirectReceiptModalEnhanced';
 import { ViewReceiptModal } from '@/components/payments/ViewReceiptModal';
 import { apiClient } from '@/integrations/api';
+import { callCustomApiAction } from '@/utils/customApiCall';
 import {
   AlertDialog,
   AlertDialogAction,

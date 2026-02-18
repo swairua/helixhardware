@@ -65,7 +65,6 @@ export function CreateInvoiceModal({ open, onOpenChange, onSuccess, preSelectedC
   );
   const [lpoNumber, setLpoNumber] = useState('');
   const [notes, setNotes] = useState('');
-  const [termsAndConditions, setTermsAndConditions] = useState(`Prepared By:……………………………………………………….…………………. Checked By:………………………………………………...……….\n\nTerms and regulations\n1) The company shall have general as well as particular lien on all goods for any unpaid A/C\n2) Cash transactions of any kind are not acceptable. All payments should be made by cheque , MPESA, or Bank transfer only\n3) Claims and queries must be lodged with us within 21 days of dispatch of goods, otherwise they will not be acceopted back\n4) Where applicable, transport will be invoiced seperately\n5) The company will not be responsible for any loss or damage of goods on transit collected by the customer or sent via customer's courier A/C\n6) The VAT is inclusive where applicable`);
   
   const [items, setItems] = useState<InvoiceItem[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -362,7 +361,7 @@ export function CreateInvoiceModal({ open, onOpenChange, onSuccess, preSelectedC
         total_amount: totalAmount,
         paid_amount: 0,
         balance_due: balanceDue,
-        terms_and_conditions: termsAndConditions,
+        terms_and_conditions: null,
         notes: notes,
         created_by: profile?.id
       };
@@ -449,7 +448,6 @@ export function CreateInvoiceModal({ open, onOpenChange, onSuccess, preSelectedC
     setDueDate(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
     setLpoNumber('');
     setNotes('');
-    setTermsAndConditions(`Prepared By:……………………………………………………….…………………. Checked By:………………………………………………...……….\n\nTerms and regulations\n1) The company shall have general as well as particular lien on all goods for any unpaid A/C\n2) Cash transactions of any kind are not acceptable. All payments should be made by cheque , MPESA, or Bank transfer only\n3) Claims and queries must be lodged with us within 21 days of dispatch of goods, otherwise they will not be acceopted back\n4) Where applicable, transport will be invoiced seperately\n5) The company will not be responsible for any loss or damage of goods on transit collected by the customer or sent via customer's courier A/C\n6) The VAT is inclusive where applicable`);
     setItems([]);
     setSearchProduct('');
   };
@@ -556,17 +554,6 @@ export function CreateInvoiceModal({ open, onOpenChange, onSuccess, preSelectedC
                     onChange={(e) => setNotes(e.target.value)}
                     rows={3}
                     placeholder="Additional notes for this invoice..."
-                  />
-                </div>
-
-                {/* Terms and Conditions */}
-                <div className="space-y-2">
-                  <Label htmlFor="terms">Terms and Conditions</Label>
-                  <Textarea
-                    id="terms"
-                    value={termsAndConditions}
-                    onChange={(e) => setTermsAndConditions(e.target.value)}
-                    rows={3}
                   />
                 </div>
               </CardContent>

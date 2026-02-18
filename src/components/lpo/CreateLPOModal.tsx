@@ -71,7 +71,6 @@ export const CreateLPOModal = ({
     contact_person: '',
     contact_phone: '',
     notes: '',
-    terms_and_conditions: 'Payment terms: Net 30 days\nDelivery: As per agreed schedule\nQuality: All items must meet specified standards',
   });
 
   const [items, setItems] = useState<LPOItem[]>([]);
@@ -320,7 +319,7 @@ export const CreateLPOModal = ({
         contact_person: formData.contact_person,
         contact_phone: formData.contact_phone,
         notes: formData.notes,
-        terms_and_conditions: formData.terms_and_conditions,
+        terms_and_conditions: null,
       };
 
       const lpoItems = items.map(item => ({
@@ -389,7 +388,6 @@ export const CreateLPOModal = ({
       contact_person: '',
       contact_phone: '',
       notes: '',
-      terms_and_conditions: 'Payment terms: Net 30 days\nDelivery: As per agreed schedule\nQuality: All items must meet specified standards',
     });
     setItems([]);
     setSearchTerm('');
@@ -965,16 +963,6 @@ export const CreateLPOModal = ({
                 value={formData.notes}
                 onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
                 placeholder="Additional notes..."
-                rows={3}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="terms_and_conditions">Terms & Conditions</Label>
-              <Textarea
-                id="terms_and_conditions"
-                value={formData.terms_and_conditions}
-                onChange={(e) => setFormData(prev => ({ ...prev, terms_and_conditions: e.target.value }))}
-                placeholder="Terms and conditions..."
                 rows={3}
               />
             </div>

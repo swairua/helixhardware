@@ -64,7 +64,6 @@ export const CreateProformaModal = ({
     proforma_date: new Date().toISOString().split('T')[0],
     valid_until: '',
     notes: '',
-    terms_and_conditions: '',
   });
 
   const [items, setItems] = useState<ProformaItem[]>([]);
@@ -240,7 +239,7 @@ export const CreateProformaModal = ({
         tax_amount: totals.totalTax,
         total_amount: totals.total,
         notes: formData.notes,
-        terms_and_conditions: formData.terms_and_conditions,
+        terms_and_conditions: null,
       };
 
       // Convert items to proforma items format (simplified for current schema)
@@ -310,7 +309,6 @@ export const CreateProformaModal = ({
       proforma_date: new Date().toISOString().split('T')[0],
       valid_until: '',
       notes: '',
-      terms_and_conditions: '',
     });
     setItems([]);
     setSearchTerm('');
@@ -543,16 +541,6 @@ export const CreateProformaModal = ({
                 value={formData.notes}
                 onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
                 placeholder="Internal notes..."
-                rows={3}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="terms_and_conditions">Terms & Conditions</Label>
-              <Textarea
-                id="terms_and_conditions"
-                value={formData.terms_and_conditions}
-                onChange={(e) => setFormData(prev => ({ ...prev, terms_and_conditions: e.target.value }))}
-                placeholder="Terms and conditions..."
                 rows={3}
               />
             </div>

@@ -63,7 +63,14 @@ export class ExternalAPIAdapter implements IDatabase {
    * This is critical for updates that happen after login
    */
   private getAuthToken(): string | null {
-    return localStorage.getItem('med_api_token');
+    const token = localStorage.getItem('med_api_token');
+    console.log('🔑 [getAuthToken] Reading token from localStorage:', {
+      tokenExists: !!token,
+      tokenLength: token ? token.length : 0,
+      tokenPrefix: token ? token.substring(0, 20) + '...' : 'NONE',
+      allStorageKeys: Object.keys(localStorage),
+    });
+    return token;
   }
 
   /**
@@ -296,6 +303,8 @@ export class ExternalAPIAdapter implements IDatabase {
           willSendAuthHeader: !!currentToken,
           authHeaderValue: currentToken ? `Bearer ${currentToken.substring(0, 20)}...` : 'NONE',
           readingFreshFromLocalStorage: true,
+          allLocalStorageKeys: Object.keys(localStorage),
+          med_api_token_value: localStorage.getItem('med_api_token') ? 'PRESENT' : 'MISSING',
         });
       }
 

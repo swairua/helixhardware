@@ -23,11 +23,14 @@ import {
   Receipt,
   Loader2,
   AlertCircle,
+  Plus,
 } from 'lucide-react';
 import { useCustomers, useCompanies } from '@/hooks/useDatabase';
 import { useCreateDirectReceipt } from '@/hooks/useQuotationItems';
 import { useAuth } from '@/contexts/AuthContext';
 import { generateDocumentNumberAPI } from '@/utils/documentNumbering';
+import { CreateCustomerModal } from '@/components/customers/CreateCustomerModal';
+import { AddInventoryItemModal } from '@/components/inventory/AddInventoryItemModal';
 import { toast } from 'sonner';
 
 interface CreateDirectReceiptModalProps {
@@ -51,6 +54,8 @@ export function CreateDirectReceiptModal({
   const [notes, setNotes] = useState('');
   const [invoiceAmount, setInvoiceAmount] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showCreateCustomerModal, setShowCreateCustomerModal] = useState(false);
+  const [showAddProductModal, setShowAddProductModal] = useState(false);
 
   // Get current user and company from context
   const { profile, loading: authLoading } = useAuth();
@@ -65,6 +70,19 @@ export function CreateDirectReceiptModal({
       setSelectedCustomerId(preSelectedCustomer.id);
     }
   }, [preSelectedCustomer, open]);
+
+  // Handle customer creation success
+  const handleCustomerCreated = (customer: any) => {
+    setSelectedCustomerId(customer.id);
+    setShowCreateCustomerModal(false);
+    toast.success(`Customer "${customer.name}" created and selected!`);
+  };
+
+  // Handle product creation success
+  const handleProductCreated = (product: any) => {
+    setShowAddProductModal(false);
+    toast.success(`Product "${product.name}" created successfully!`);
+  };
 
   const formatCurrency = (value: string) => {
     const num = parseFloat(value) || 0;
@@ -142,6 +160,7 @@ export function CreateDirectReceiptModal({
   const isPartialPayment = amountNum > 0 && amountNum < invoiceAmountNum && invoiceAmountNum > 0;
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
@@ -157,7 +176,19 @@ export function CreateDirectReceiptModal({
         <div className="space-y-6">
           {/* Customer Selection */}
           <div className="space-y-2">
-            <Label htmlFor="customer">Customer *</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="customer">Customer *</Label>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowCreateCustomerModal(true)}
+                className="h-auto p-1 text-xs text-primary hover:text-primary/80"
+              >
+                <Plus className="h-3 w-3 mr-1" />
+                Create New
+              </Button>
+            </div>
             <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
               <SelectTrigger>
                 <SelectValue placeholder="Select a customer" />
@@ -280,6 +311,23 @@ export function CreateDirectReceiptModal({
             </CardContent>
           </Card>
 
+          {/* Product Creation */}
+          <div className="space-y-2">
+            <Label>Products</Label>
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              onClick={() => setShowAddProductModal(true)}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Create New Product
+            </Button>
+            <p className="text-xs text-muted-foreground">
+              Create a new product that can be used in this or future receipts
+            </p>
+          </div>
+
           {/* Notes */}
           <div className="space-y-2">
             <Label htmlFor="notes">Notes</Label>
@@ -304,5 +352,20 @@ export function CreateDirectReceiptModal({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    {/* Create Customer Modal */}
+    <CreateCustomerModal
+      open={showCreateCustomerModal}
+      onOpenChange={setShowCreateCustomerModal}
+      onSuccess={handleCustomerCreated}
+    />
+
+    {/* Add Product Modal */}
+    <AddInventoryItemModal
+      open={showAddProductModal}
+      onOpenChange={setShowAddProductModal}
+      onSuccess={handleProductCreated}
+    />
+    </>
   );
 }

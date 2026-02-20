@@ -58,7 +58,6 @@ import { Permission, PERMISSION_DESCRIPTIONS, RoleDefinition } from '@/types/per
 import { toast } from 'sonner';
 import { RoleAuditHistory } from '@/components/roles/RoleAuditHistory';
 import { RoleAnalytics } from '@/components/roles/RoleAnalytics';
-import { AuditRolesSetup } from '@/components/settings/AuditRolesSetup';
 
 // Group permissions by category
 const PERMISSION_GROUPS: Record<string, Permission[]> = {
@@ -230,9 +229,6 @@ export function RoleManagement() {
 
   return (
     <div className="space-y-6">
-      {/* Audit Roles Setup Card */}
-      <AuditRolesSetup />
-
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Role Management</h1>

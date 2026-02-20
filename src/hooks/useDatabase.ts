@@ -412,14 +412,10 @@ export function useUpdateProduct() {
 
 /**
  * Hook to get units of measure
- * @param companyId - Optional company ID for filtering
+ * Units of measure are system-wide, not company-specific
  */
-export function useUnitsOfMeasure(companyId?: string) {
-  const filter = useMemo(() =>
-    companyId ? { company_id: companyId } : undefined,
-    [companyId]
-  );
-  return useSelect('units_of_measure', filter);
+export function useUnitsOfMeasure() {
+  return useSelect('units_of_measure');
 }
 
 /**

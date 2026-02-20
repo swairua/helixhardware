@@ -45,7 +45,7 @@ export async function analyzePaymentSyncStatus(): Promise<PaymentSyncAnalysis> {
           payment_allocations(
             id,
             invoice_id,
-            amount_allocated
+            amount
           )
         `)
         .order('created_at', { ascending: false });
@@ -152,7 +152,7 @@ export async function analyzePaymentSyncStatus(): Promise<PaymentSyncAnalysis> {
       
       const totalAllocated = invoicePayments.reduce((sum, payment) => {
         const allocationsForInvoice = payment.payment_allocations?.filter(alloc => alloc.invoice_id === invoice.id) || [];
-        return sum + allocationsForInvoice.reduce((allocSum, alloc) => allocSum + (alloc.amount_allocated || 0), 0);
+        return sum + allocationsForInvoice.reduce((allocSum, alloc) => allocSum + (alloc.amount || 0), 0);
       }, 0);
       
       const expectedPaidAmount = totalAllocated;
@@ -203,7 +203,7 @@ export async function synchronizePayments(
           .insert([{
             payment_id: payment.id,
             invoice_id: invoice.id,
-            amount_allocated: payment.amount
+            amount: payment.amount
           }]);
 
         if (allocationError) {
@@ -298,7 +298,7 @@ export async function recalculateAllInvoiceBalances(): Promise<{ updated: number
 
     for (const invoice of invoices || []) {
       const totalAllocated = invoice.payment_allocations?.reduce(
-        (sum: number, alloc: any) => sum + (alloc.amount_allocated || 0),
+        (sum: number, alloc: any) => sum + (alloc.amount || 0),
         0
       ) || 0;
 

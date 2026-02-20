@@ -109,6 +109,28 @@ export function ViewInvoiceModal({
     }
   };
 
+  const calculateActualStatus = (invoice: any): string => {
+    const tolerance = 0.01;
+    const balanceDue = Math.abs(invoice.balance_due || 0) < tolerance ? 0 : (invoice.balance_due || 0);
+    const paidAmount = invoice.paid_amount || 0;
+
+    if (balanceDue <= 0 && paidAmount > 0) {
+      return 'paid';
+    }
+    if (paidAmount > 0 && balanceDue > 0) {
+      return 'partial';
+    }
+    if (invoice.status === 'overdue') {
+      return 'overdue';
+    }
+    if (invoice.status === 'sent') {
+      return 'sent';
+    }
+    return 'draft';
+  };
+
+  const actualStatus = calculateActualStatus(invoice);
+
   return (
     <>
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -120,8 +142,8 @@ export function ViewInvoiceModal({
               <div>
                 <div className="flex items-center space-x-2">
                   <span>Invoice {invoice.invoice_number}</span>
-                  <Badge variant="outline" className={getStatusColor(invoice.status)}>
-                    {invoice.status?.charAt(0).toUpperCase() + invoice.status?.slice(1)}
+                  <Badge variant="outline" className={getStatusColor(actualStatus)}>
+                    {actualStatus.charAt(0).toUpperCase() + actualStatus.slice(1)}
                   </Badge>
                 </div>
                 <div className="text-sm text-muted-foreground font-normal">

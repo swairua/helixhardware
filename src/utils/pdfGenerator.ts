@@ -907,11 +907,11 @@ export const generatePaymentReceiptPDF = async (payment: any, company?: CompanyD
         `Invoice ${allocation.invoice_number}${allocation.invoice_date ? ` - ${new Date(allocation.invoice_date).toLocaleDateString()}` : ''}` :
         'Payment Allocation',
       quantity: 1,
-      unit_price: allocation.allocated_amount || allocation.amount_allocated || 0,
+      unit_price: allocation.amount || allocation.allocated_amount || allocation.amount_allocated || 0,
       tax_percentage: 0,
       tax_amount: 0,
       tax_inclusive: false,
-      line_total: allocation.allocated_amount || allocation.amount_allocated || 0,
+      line_total: allocation.amount || allocation.allocated_amount || allocation.amount_allocated || 0,
       unit_of_measure: 'payment',
     }));
   }

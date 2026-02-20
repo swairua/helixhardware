@@ -26,7 +26,7 @@ import {
 interface PaymentAllocation {
   id: string;
   invoice_number: string;
-  allocated_amount: number;
+  amount: number;
   invoice_total: number;
 }
 
@@ -103,8 +103,8 @@ export const ViewPaymentModal = ({
     onSendReceipt?.(payment);
   };
 
-  const totalAllocated = payment.payment_allocations?.reduce((sum, allocation) => 
-    sum + allocation.allocated_amount, 0
+  const totalAllocated = payment.payment_allocations?.reduce((sum, allocation) =>
+    sum + (allocation.amount || (allocation as any).allocated_amount || 0), 0
   ) || 0;
 
   const unallocatedAmount = payment.amount - totalAllocated;
@@ -225,10 +225,10 @@ export const ViewPaymentModal = ({
                         <TableCell className="font-medium">{allocation.invoice_number}</TableCell>
                         <TableCell>{formatCurrency(allocation.invoice_total)}</TableCell>
                         <TableCell className="font-medium text-success">
-                          {formatCurrency(allocation.allocated_amount)}
+                          {formatCurrency(allocation.amount || (allocation as any).allocated_amount || 0)}
                         </TableCell>
                         <TableCell>
-                          {formatCurrency(allocation.invoice_total - allocation.allocated_amount)}
+                          {formatCurrency(allocation.invoice_total - (allocation.amount || (allocation as any).allocated_amount || 0))}
                         </TableCell>
                       </TableRow>
                     ))}

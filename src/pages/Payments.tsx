@@ -51,7 +51,7 @@ interface Payment {
   payment_allocations?: {
     id: string;
     invoice_number: string;
-    allocated_amount: number;
+    amount: number;
     invoice_total: number;
   }[];
 }
@@ -200,7 +200,7 @@ export default function Payments() {
     const allocations = (payment.payment_allocations || (invoice ? [{
       invoice_id: invoice.id,
       invoice_number: invoice.invoice_number,
-      allocated_amount: payment.amount,
+      amount: payment.amount,
       invoice_total: invoice.total_amount
     }] : [])).map(allocation => {
       // Find the corresponding invoice to get invoice_number and other details

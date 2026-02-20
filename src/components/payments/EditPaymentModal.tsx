@@ -46,7 +46,7 @@ interface EditPaymentModalProps {
     };
     payment_allocations?: Array<{
       invoice_number: string;
-      allocated_amount: number;
+      amount: number;
     }>;
   };
 }
@@ -268,7 +268,7 @@ export function EditPaymentModal({
                     <div key={idx} className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
                       <span className="font-medium text-sm">{allocation.invoice_number}</span>
                       <span className="text-sm font-semibold text-success">
-                        {formatCurrency(allocation.allocated_amount)}
+                        {formatCurrency(allocation.amount || (allocation as any).allocated_amount || 0)}
                       </span>
                     </div>
                   ))}

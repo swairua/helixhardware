@@ -38,14 +38,14 @@ export async function reconcileInvoiceBalance(
     // 2. Get all allocations for this invoice
     const { data: allocations, error: allocationsError } = await supabase
       .from('payment_allocations')
-      .select('amount_allocated')
+      .select('amount')
       .eq('invoice_id', invoiceId);
 
     if (allocationsError) throw allocationsError;
 
     // 3. Calculate values
     const calculatedPaidAmount = (allocations || []).reduce(
-      (sum, alloc) => sum + (alloc.amount_allocated || 0),
+      (sum, alloc) => sum + (alloc.amount || 0),
       0
     );
     const calculatedBalance = invoice.total_amount - calculatedPaidAmount;
@@ -171,7 +171,7 @@ export async function getPaymentAuditTrail(invoiceId: string): Promise<any[]> {
       .from('payment_allocations')
       .select(`
         id,
-        amount_allocated,
+        amount,
         created_at,
         payments (
           id,
@@ -197,7 +197,7 @@ export async function getPaymentAuditTrail(invoiceId: string): Promise<any[]> {
       id: allocation.id,
       paymentNumber: allocation.payments?.payment_number,
       paymentAmount: allocation.payments?.amount,
-      allocatedAmount: allocation.amount_allocated,
+      allocatedAmount: allocation.amount,
       paymentMethod: allocation.payments?.payment_method,
       paymentDate: allocation.payments?.payment_date,
       referenceNumber: allocation.payments?.reference_number,

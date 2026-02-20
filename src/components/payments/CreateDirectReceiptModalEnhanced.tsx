@@ -30,6 +30,8 @@ import {
   Receipt,
   Loader2
 } from 'lucide-react';
+import { CreateCustomerModal } from '@/components/customers/CreateCustomerModal';
+import { AddInventoryItemModal } from '@/components/inventory/AddInventoryItemModal';
 import { useCustomers, useGenerateDocumentNumber, useTaxSettings, useCompanies } from '@/hooks/useDatabase';
 import { useOptimizedProductSearch, usePopularProducts } from '@/hooks/useOptimizedProducts';
 import { useCreateDirectReceiptWithItems } from '@/hooks/useQuotationItems';
@@ -80,6 +82,8 @@ export function CreateDirectReceiptModalEnhanced({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showExcessPaymentHandler, setShowExcessPaymentHandler] = useState(false);
   const [excessPaymentData, setExcessPaymentData] = useState<ExcessPaymentData | null>(null);
+  const [showCreateCustomerModal, setShowCreateCustomerModal] = useState(false);
+  const [showAddProductModal, setShowAddProductModal] = useState(false);
 
   // Get current user and company from context
   const { profile, loading: authLoading } = useAuth();
@@ -111,6 +115,21 @@ export function CreateDirectReceiptModalEnhanced({
       setSelectedCustomerId(preSelectedCustomer.id);
     }
   }, [preSelectedCustomer, open]);
+
+  // Handle customer creation success
+  const handleCustomerCreated = (customer: any) => {
+    setSelectedCustomerId(customer.id);
+    setShowCreateCustomerModal(false);
+    toast.success(`Customer "${customer.name}" created and selected!`);
+  };
+
+  // Handle product creation success
+  const handleProductCreated = (product: any) => {
+    setShowAddProductModal(false);
+    toast.success(`Product "${product.name}" created successfully!`);
+    // Add the newly created product to the receipt
+    addItem(product);
+  };
 
   // Use optimized search results or popular products when no search term
   const displayProducts = searchProduct.trim() ? searchedProducts : popularProducts;
@@ -391,7 +410,19 @@ export function CreateDirectReceiptModalEnhanced({
         <div className="space-y-6">
           {/* Customer Selection */}
           <div className="space-y-2">
-            <Label htmlFor="customer">Customer *</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="customer">Customer *</Label>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowCreateCustomerModal(true)}
+                className="h-auto p-1 text-xs text-primary hover:text-primary/80"
+              >
+                <Plus className="h-3 w-3 mr-1" />
+                Create New
+              </Button>
+            </div>
             <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
               <SelectTrigger>
                 <SelectValue placeholder="Select a customer" />
@@ -509,7 +540,19 @@ export function CreateDirectReceiptModalEnhanced({
 
               {/* Product Search */}
               <div className="space-y-2">
-                <Label htmlFor="productSearch">Add Products</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="productSearch">Add Products</Label>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowAddProductModal(true)}
+                    className="h-auto p-1 text-xs text-primary hover:text-primary/80"
+                  >
+                    <Plus className="h-3 w-3 mr-1" />
+                    Create New
+                  </Button>
+                </div>
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input

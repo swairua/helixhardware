@@ -20,6 +20,33 @@ export const usePermissions = () => {
   const [error, setError] = useState<string | null>(null);
 
   /**
+   * Normalize role permissions to ensure they're always arrays
+   */
+  const normalizeRole = (roleData: any): RoleDefinition => {
+    let permissions: any[] = [];
+
+    if (Array.isArray(roleData.permissions)) {
+      permissions = roleData.permissions;
+    } else if (typeof roleData.permissions === 'string') {
+      // Handle JSON string stored in database
+      try {
+        const parsed = JSON.parse(roleData.permissions);
+        permissions = Array.isArray(parsed) ? parsed : [];
+      } catch (e) {
+        console.error('Failed to parse permissions string:', roleData.permissions, e);
+        permissions = [];
+      }
+    } else if (roleData.permissions === null || roleData.permissions === undefined) {
+      permissions = [];
+    }
+
+    return {
+      ...roleData,
+      permissions,
+    };
+  };
+
+  /**
    * Fetch the user's role definition
    */
   const fetchUserRole = useCallback(async () => {
@@ -88,7 +115,7 @@ export const usePermissions = () => {
           setRole(null);
         }
       } else if (data) {
-        setRole(data);
+        setRole(normalizeRole(data));
       } else {
         // Role not found in roles table, use default permissions as fallback
         console.warn(`Role ${userRole} not found in roles table, using default fallback`);

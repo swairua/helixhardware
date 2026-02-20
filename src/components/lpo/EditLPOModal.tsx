@@ -463,32 +463,35 @@ export const EditLPOModal = ({
                           <TableCell>
                             <Input
                               type="number"
-                              value={item.quantity}
+                              value={item.quantity || ''}
                               onChange={(e) => updateItem(item.id, 'quantity', parseFloat(e.target.value) || 0)}
                               min="0"
                               step="0.01"
                               className="w-20"
+                              placeholder="0"
                             />
                           </TableCell>
                           <TableCell>
                             <Input
                               type="number"
-                              value={item.unit_price}
+                              value={item.unit_price || ''}
                               onChange={(e) => updateItem(item.id, 'unit_price', parseFloat(e.target.value) || 0)}
                               min="0"
                               step="0.01"
                               className="w-24"
+                              placeholder="0.00"
                             />
                           </TableCell>
                           <TableCell>
                             <Input
                               type="number"
-                              value={item.tax_rate}
+                              value={item.tax_rate || ''}
                               onChange={(e) => updateItem(item.id, 'tax_rate', parseFloat(e.target.value) || 0)}
                               min="0"
                               max="100"
                               step="0.01"
                               className="w-16"
+                              placeholder="0.00"
                             />
                           </TableCell>
                           <TableCell className="font-medium">

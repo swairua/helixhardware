@@ -556,7 +556,6 @@ export function CreateDirectReceiptModalEnhanced({
                       <TableHead>Product</TableHead>
                       <TableHead className="text-center">Qty</TableHead>
                       <TableHead className="text-right">Unit Price</TableHead>
-                      <TableHead className="text-center">Tax %</TableHead>
                       <TableHead className="text-right">Total</TableHead>
                       <TableHead className="w-10"></TableHead>
                     </TableRow>
@@ -583,21 +582,6 @@ export function CreateDirectReceiptModalEnhanced({
                             className="w-full text-right h-10"
                           />
                         </TableCell>
-                        <TableCell className="w-32">
-                          <Select
-                            value={item.tax_percentage.toString()}
-                            onValueChange={(value) => updateItemTaxPercentage(item.id, parseFloat(value))}
-                          >
-                            <SelectTrigger className="h-10">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="0">0% (None)</SelectItem>
-                              <SelectItem value="8">8% VAT</SelectItem>
-                              <SelectItem value="16">16% VAT</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </TableCell>
                         <TableCell className="w-28 font-semibold text-right">
                           {formatCurrency(item.line_total)}
                         </TableCell>
@@ -623,10 +607,6 @@ export function CreateDirectReceiptModalEnhanced({
                   <div className="flex justify-end gap-4">
                     <span className="font-medium">Subtotal:</span>
                     <span>{formatCurrency(subtotal)}</span>
-                  </div>
-                  <div className="flex justify-end gap-4">
-                    <span className="font-medium">Tax:</span>
-                    <span>{formatCurrency(totalTax)}</span>
                   </div>
                   <div className="flex justify-end gap-4 text-lg font-bold">
                     <span>Total:</span>

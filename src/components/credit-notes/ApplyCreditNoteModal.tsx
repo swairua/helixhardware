@@ -45,7 +45,7 @@ export function ApplyCreditNoteModal({
   creditNote 
 }: ApplyCreditNoteModalProps) {
   const [selectedInvoiceId, setSelectedInvoiceId] = useState('');
-  const [amountToApply, setAmountToApply] = useState(0);
+  const [amountToApply, setAmountToApply] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { data: invoices = [] } = useInvoices(creditNote?.company_id);
@@ -65,10 +65,10 @@ export function ApplyCreditNoteModal({
   useEffect(() => {
     if (open && creditNote) {
       setSelectedInvoiceId('');
-      setAmountToApply(creditNote.balance || 0);
+      setAmountToApply('');
     } else if (!open) {
       setSelectedInvoiceId('');
-      setAmountToApply(0);
+      setAmountToApply('');
     }
   }, [open, creditNote]);
 
@@ -79,7 +79,9 @@ export function ApplyCreditNoteModal({
         creditNote.balance || 0,
         selectedInvoice.balance_due || 0
       );
-      setAmountToApply(maxApplicableAmount);
+      setAmountToApply(maxApplicableAmount.toString());
+    } else {
+      setAmountToApply('');
     }
   }, [selectedInvoice, creditNote]);
 
@@ -98,9 +100,9 @@ export function ApplyCreditNoteModal({
       creditNote?.balance || 0,
       selectedInvoice?.balance_due || 0
     );
-    
+
     if (numValue <= maxAmount) {
-      setAmountToApply(numValue);
+      setAmountToApply(value);
     } else {
       toast.error(`Amount cannot exceed ${formatCurrency(maxAmount)}`);
     }
@@ -112,17 +114,18 @@ export function ApplyCreditNoteModal({
       return;
     }
 
-    if (amountToApply <= 0) {
+    const numAmount = parseFloat(amountToApply) || 0;
+    if (numAmount <= 0) {
       toast.error('Amount must be greater than zero');
       return;
     }
 
-    if (amountToApply > (creditNote.balance || 0)) {
+    if (numAmount > (creditNote.balance || 0)) {
       toast.error('Amount exceeds available credit note balance');
       return;
     }
 
-    if (amountToApply > (selectedInvoice?.balance_due || 0)) {
+    if (numAmount > (selectedInvoice?.balance_due || 0)) {
       toast.error('Amount exceeds invoice balance due');
       return;
     }
@@ -133,7 +136,7 @@ export function ApplyCreditNoteModal({
       await applyCreditNoteMutation.mutateAsync({
         creditNoteId: creditNote.id,
         invoiceId: selectedInvoiceId,
-        amount: amountToApply,
+        amount: parseFloat(amountToApply),
         appliedBy: user.id
       });
 
@@ -289,14 +292,15 @@ export function ApplyCreditNoteModal({
             type="submit"
             onClick={handleSubmit}
             disabled={
-              isSubmitting || 
-              !selectedInvoiceId || 
-              amountToApply <= 0 || 
+              isSubmitting ||
+              !selectedInvoiceId ||
+              !amountToApply ||
+              parseFloat(amountToApply) <= 0 ||
               availableInvoices.length === 0
             }
             className="gradient-primary text-primary-foreground"
           >
-            {isSubmitting ? 'Applying...' : `Apply ${formatCurrency(amountToApply)}`}
+            {isSubmitting ? 'Applying...' : `Apply ${formatCurrency(parseFloat(amountToApply) || 0)}`}
           </Button>
         </DialogFooter>
       </DialogContent>

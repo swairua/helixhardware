@@ -46,7 +46,7 @@ interface RecordPaymentModalProps {
 export function RecordPaymentModal({ open, onOpenChange, onSuccess, invoice }: RecordPaymentModalProps) {
   const [paymentData, setPaymentData] = useState({
     invoice_id: invoice?.id || '',
-    amount: invoice?.balance_due || 0,
+    amount: '',
     payment_date: new Date().toISOString().split('T')[0],
     payment_method: '',
     reference_number: ''
@@ -281,7 +281,7 @@ export function RecordPaymentModal({ open, onOpenChange, onSuccess, invoice }: R
   const resetForm = () => {
     setPaymentData({
       invoice_id: invoice?.id || '',
-      amount: invoice?.balance_due || 0,
+      amount: '',
       payment_date: new Date().toISOString().split('T')[0],
       payment_method: paymentMethods.length > 0 ? paymentMethods[0].code : '',
       reference_number: ''

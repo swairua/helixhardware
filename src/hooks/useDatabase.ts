@@ -307,7 +307,7 @@ export function useCustomers(companyId?: string) {
     }));
   }, [rawData]);
 
-  return { data, isLoading, error, retry, loadingTimeout };
+  return { data, isLoading, error, refetch: retry, loadingTimeout };
 }
 
 /**
@@ -341,7 +341,7 @@ export function useProducts(companyId?: string) {
     }));
   }, [rawData]);
 
-  return { data, isLoading, error, retry, loadingTimeout };
+  return { data, isLoading, error, refetch: retry, loadingTimeout };
 }
 
 /**

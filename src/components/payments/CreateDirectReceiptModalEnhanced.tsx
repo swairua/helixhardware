@@ -89,15 +89,16 @@ export function CreateDirectReceiptModalEnhanced({
   const { profile, loading: authLoading } = useAuth();
   const { data: companies } = useCompanies();
   const currentCompany = companies?.[0];
-  const { data: customers, isLoading: loadingCustomers } = useCustomers(currentCompany?.id);
+  const { data: customers, isLoading: loadingCustomers, refetch: refetchCustomers } = useCustomers(currentCompany?.id);
   const {
     data: searchedProducts,
     isLoading: loadingProducts,
     searchTerm: searchProduct,
     setSearchTerm: setSearchProduct,
-    isSearching
+    isSearching,
+    refetch: refetchSearchedProducts
   } = useOptimizedProductSearch(currentCompany?.id, open);
-  const { data: popularProducts } = usePopularProducts(currentCompany?.id, 10);
+  const { data: popularProducts, refetch: refetchPopularProducts } = usePopularProducts(currentCompany?.id, 10);
   const { data: taxSettings } = useTaxSettings(currentCompany?.id);
   const createDirectReceiptWithItems = useCreateDirectReceiptWithItems();
   const createCreditBalance = useCreateCreditBalance();
@@ -121,6 +122,10 @@ export function CreateDirectReceiptModalEnhanced({
     setSelectedCustomerId(customer.id);
     setShowCreateCustomerModal(false);
     toast.success(`Customer "${customer.name}" created and selected!`);
+    // Refetch customers to ensure new customer appears in the list
+    if (refetchCustomers) {
+      refetchCustomers();
+    }
   };
 
   // Handle product creation success
@@ -129,6 +134,13 @@ export function CreateDirectReceiptModalEnhanced({
     toast.success(`Product "${product.name}" created successfully!`);
     // Add the newly created product to the receipt
     addItem(product);
+    // Refetch products to ensure new product appears in the search results
+    if (refetchSearchedProducts) {
+      refetchSearchedProducts();
+    }
+    if (refetchPopularProducts) {
+      refetchPopularProducts();
+    }
   };
 
   // Use optimized search results or popular products when no search term

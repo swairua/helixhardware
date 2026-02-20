@@ -61,7 +61,7 @@ export function CreateDirectReceiptModal({
   const { profile, loading: authLoading } = useAuth();
   const { data: companies } = useCompanies();
   const currentCompany = companies?.[0];
-  const { data: customers, isLoading: loadingCustomers } = useCustomers(currentCompany?.id);
+  const { data: customers, isLoading: loadingCustomers, refetch: refetchCustomers } = useCustomers(currentCompany?.id);
   const createDirectReceipt = useCreateDirectReceipt();
 
   // Handle pre-selected customer
@@ -76,12 +76,17 @@ export function CreateDirectReceiptModal({
     setSelectedCustomerId(customer.id);
     setShowCreateCustomerModal(false);
     toast.success(`Customer "${customer.name}" created and selected!`);
+    // Refetch customers to ensure new customer appears in the list
+    if (refetchCustomers) {
+      refetchCustomers();
+    }
   };
 
   // Handle product creation success
   const handleProductCreated = (product: any) => {
     setShowAddProductModal(false);
     toast.success(`Product "${product.name}" created successfully!`);
+    // No need to refetch here since this modal doesn't display products
   };
 
   const formatCurrency = (value: string) => {

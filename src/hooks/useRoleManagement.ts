@@ -26,6 +26,16 @@ export const useRoleManagement = () => {
   const [error, setError] = useState<string | null>(null);
 
   /**
+   * Normalize role permissions to ensure they're always arrays
+   */
+  const normalizeRole = (role: any): RoleDefinition => {
+    return {
+      ...role,
+      permissions: Array.isArray(role.permissions) ? role.permissions : [],
+    };
+  };
+
+  /**
    * Fetch all roles for the current company
    */
   const fetchRoles = useCallback(async () => {
@@ -48,7 +58,9 @@ export const useRoleManagement = () => {
         throw fetchError;
       }
 
-      setRoles(data || []);
+      // Normalize all roles to ensure permissions are arrays
+      const normalizedRoles = (data || []).map(normalizeRole);
+      setRoles(normalizedRoles);
     } catch (err) {
       const errorMessage = parseErrorMessageWithCodes(err, 'fetching roles');
       console.error('Error fetching roles:', err);
@@ -100,7 +112,7 @@ export const useRoleManagement = () => {
 
       toast.success('Role created successfully');
       await fetchRoles();
-      return { success: true, role: newRole };
+      return { success: true, role: normalizeRole(newRole) };
     } catch (err) {
       const errorMessage = parseErrorMessageWithCodes(err, 'role creation');
       console.error('Error creating role:', err);

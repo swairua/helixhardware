@@ -306,7 +306,7 @@ export function RoleManagement() {
                     </TableCell>
                     <TableCell>
                       <Badge variant="secondary">
-                        {role.permissions.length} permissions
+                        {Array.isArray(role.permissions) ? role.permissions.length : 0} permissions
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
@@ -423,18 +423,20 @@ export function RoleManagement() {
               <div className="mb-4">
                 <h3 className="text-sm font-semibold mb-3">Permissions</h3>
                 <p className="text-sm text-muted-foreground mb-4">
-                  Select permissions for this role. Total selected: {formData.permissions.length}
+                  Select permissions for this role. Total selected: {Array.isArray(formData.permissions) ? formData.permissions.length : 0}
                 </p>
               </div>
 
               <ScrollArea className="max-h-[60vh] h-auto md:h-[400px] border rounded-lg p-4">
                 <div className="space-y-6">
                   {Object.entries(PERMISSION_GROUPS).map(([group, permissions]) => {
+                    // Ensure formData.permissions is always an array
+                    const permissionsList = Array.isArray(formData.permissions) ? formData.permissions : [];
                     const allIncluded = permissions.every((p) =>
-                      formData.permissions.includes(p)
+                      permissionsList.includes(p)
                     );
                     const someIncluded = permissions.some((p) =>
-                      formData.permissions.includes(p)
+                      permissionsList.includes(p)
                     );
 
                     return (
@@ -458,7 +460,7 @@ export function RoleManagement() {
                             <div key={permission} className="flex items-start space-x-2">
                               <Checkbox
                                 id={permission}
-                                checked={formData.permissions.includes(permission)}
+                                checked={(Array.isArray(formData.permissions) ? formData.permissions : []).includes(permission)}
                                 onCheckedChange={() => togglePermission(permission)}
                               />
                               <Label

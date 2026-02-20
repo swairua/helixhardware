@@ -481,21 +481,23 @@ export const CreateProformaModal = ({
                         <TableCell>
                           <Input
                             type="number"
-                            value={item.quantity}
+                            value={item.quantity || ''}
                             onChange={(e) => updateItem(item.id, 'quantity', parseFloat(e.target.value) || 0)}
                             min="0"
                             step="0.01"
                             className="w-20"
+                            placeholder="0"
                           />
                         </TableCell>
                         <TableCell>
                           <Input
                             type="number"
-                            value={item.unit_price}
+                            value={item.unit_price || ''}
                             onChange={(e) => updateItem(item.id, 'unit_price', parseFloat(e.target.value) || 0)}
                             min="0"
                             step="0.01"
                             className="w-24"
+                            placeholder="0.00"
                           />
                         </TableCell>
                         <TableCell>${item.line_total.toFixed(2)}</TableCell>

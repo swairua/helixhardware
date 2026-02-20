@@ -39,9 +39,9 @@ interface RemittanceItem {
   date: string;
   invoiceNumber: string;
   creditNote: string;
-  invoiceAmount: number;
-  creditAmount: number;
-  payment: number;
+  invoiceAmount: number | string;
+  creditAmount: number | string;
+  payment: number | string;
 }
 
 export function EditRemittanceModal({ open, onOpenChange, remittance, onSuccess }: EditRemittanceModalProps) {
@@ -83,17 +83,17 @@ export function EditRemittanceModal({ open, onOpenChange, remittance, onSuccess 
         date: item.document_date,
         invoiceNumber: item.document_number,
         creditNote: '', // Map as needed
-        invoiceAmount: item.invoice_amount || 0,
-        creditAmount: item.credit_amount || 0,
-        payment: item.payment_amount,
+        invoiceAmount: item.invoice_amount || '',
+        creditAmount: item.credit_amount || '',
+        payment: item.payment_amount || '',
       })) || [{
         id: undefined,
         date: new Date().toISOString().split('T')[0],
         invoiceNumber: '',
         creditNote: '',
-        invoiceAmount: 0,
-        creditAmount: 0,
-        payment: 0,
+        invoiceAmount: '',
+        creditAmount: '',
+        payment: '',
       }];
 
       setItems(formItems);
@@ -123,9 +123,9 @@ export function EditRemittanceModal({ open, onOpenChange, remittance, onSuccess 
       date: new Date().toISOString().split('T')[0],
       invoiceNumber: '',
       creditNote: '',
-      invoiceAmount: 0,
-      creditAmount: 0,
-      payment: 0,
+      invoiceAmount: '',
+      creditAmount: '',
+      payment: '',
     };
     setItems([...items, newItem]);
   };

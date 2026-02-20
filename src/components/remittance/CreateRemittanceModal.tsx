@@ -38,9 +38,9 @@ interface RemittanceItem {
   date: string;
   invoiceNumber: string;
   creditNote: string;
-  invoiceAmount: number;
-  creditAmount: number;
-  payment: number;
+  invoiceAmount: number | string;
+  creditAmount: number | string;
+  payment: number | string;
 }
 
 export function CreateRemittanceModal({ open, onOpenChange, onSuccess }: CreateRemittanceModalProps) {
@@ -65,9 +65,9 @@ export function CreateRemittanceModal({ open, onOpenChange, onSuccess }: CreateR
     date: new Date().toISOString().split('T')[0],
     invoiceNumber: '',
     creditNote: '',
-    invoiceAmount: 0,
-    creditAmount: 0,
-    payment: 0,
+    invoiceAmount: '',
+    creditAmount: '',
+    payment: '',
   }]);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -125,9 +125,9 @@ export function CreateRemittanceModal({ open, onOpenChange, onSuccess }: CreateR
       date: new Date().toISOString().split('T')[0],
       invoiceNumber: '',
       creditNote: '',
-      invoiceAmount: 0,
-      creditAmount: 0,
-      payment: 0,
+      invoiceAmount: '',
+      creditAmount: '',
+      payment: '',
     };
     setItems([...items, newItem]);
   };
@@ -231,9 +231,9 @@ export function CreateRemittanceModal({ open, onOpenChange, onSuccess }: CreateR
         date: new Date().toISOString().split('T')[0],
         invoiceNumber: '',
         creditNote: '',
-        invoiceAmount: 0,
-        creditAmount: 0,
-        payment: 0,
+        invoiceAmount: '',
+        creditAmount: '',
+        payment: '',
       }]);
 
     } catch (error: any) {

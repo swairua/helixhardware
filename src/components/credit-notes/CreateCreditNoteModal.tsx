@@ -41,10 +41,10 @@ interface CreditNoteItem {
   product_id?: string; // Optional to allow custom items
   product_name: string;
   description: string;
-  quantity: number;
-  unit_price: number;
-  tax_percentage: number;
-  tax_amount: number;
+  quantity: number | string;
+  unit_price: number | string;
+  tax_percentage: number | string;
+  tax_amount: number | string;
   tax_inclusive: boolean;
   line_total: number;
 }
@@ -147,8 +147,8 @@ export function CreateCreditNoteModal({
       description: product.description || product.name,
       quantity: 1,
       unit_price: product.selling_price,
-      tax_percentage: 0,
-      tax_amount: 0,
+      tax_percentage: '',
+      tax_amount: '',
       tax_inclusive: false,
       line_total: product.selling_price
     };
@@ -168,9 +168,9 @@ export function CreateCreditNoteModal({
       product_name: 'Custom Item',
       description: 'Custom credit item',
       quantity: 1,
-      unit_price: 0,
-      tax_percentage: 0,
-      tax_amount: 0,
+      unit_price: '',
+      tax_percentage: '',
+      tax_amount: '',
       tax_inclusive: false,
       line_total: 0
     };
@@ -178,10 +178,10 @@ export function CreateCreditNoteModal({
     setItems([...items, newItem]);
   };
 
-  const calculateLineTotal = (item: CreditNoteItem, quantity?: number, unitPrice?: number, taxPercentage?: number, taxInclusive?: boolean) => {
-    const qty = quantity ?? item.quantity;
-    const price = unitPrice ?? item.unit_price;
-    const tax = taxPercentage ?? item.tax_percentage;
+  const calculateLineTotal = (item: CreditNoteItem, quantity?: number | string, unitPrice?: number | string, taxPercentage?: number | string, taxInclusive?: boolean) => {
+    const qty = Number(quantity ?? item.quantity);
+    const price = Number(unitPrice ?? item.unit_price);
+    const tax = Number(taxPercentage ?? item.tax_percentage);
     const inclusive = taxInclusive ?? item.tax_inclusive;
 
     const baseAmount = qty * price;
@@ -205,8 +205,8 @@ export function CreateCreditNoteModal({
     return { lineTotal, taxAmount };
   };
 
-  const updateItemQuantity = (itemId: string, quantity: number) => {
-    if (quantity <= 0) {
+  const updateItemQuantity = (itemId: string, quantity: number | string) => {
+    if (Number(quantity) <= 0 && quantity !== '') {
       removeItem(itemId);
       return;
     }
@@ -220,7 +220,7 @@ export function CreateCreditNoteModal({
     }));
   };
 
-  const updateItemPrice = (itemId: string, unitPrice: number) => {
+  const updateItemPrice = (itemId: string, unitPrice: number | string) => {
     setItems(items.map(item => {
       if (item.id === itemId) {
         const { lineTotal, taxAmount } = calculateLineTotal(item, undefined, unitPrice);
@@ -230,7 +230,7 @@ export function CreateCreditNoteModal({
     }));
   };
 
-  const updateItemTax = (itemId: string, taxPercentage: number) => {
+  const updateItemTax = (itemId: string, taxPercentage: number | string) => {
     setItems(items.map(item => {
       if (item.id === itemId) {
         const { lineTotal, taxAmount } = calculateLineTotal(item, undefined, undefined, taxPercentage);
@@ -244,11 +244,11 @@ export function CreateCreditNoteModal({
     setItems(items.map(item => {
       if (item.id === itemId) {
         let newTaxPercentage = item.tax_percentage;
-        if (taxInclusive && item.tax_percentage === 0) {
+        if (taxInclusive && (item.tax_percentage === 0 || item.tax_percentage === '')) {
           newTaxPercentage = defaultTaxRate;
         }
         if (!taxInclusive) {
-          newTaxPercentage = 0;
+          newTaxPercentage = '';
         }
 
         const { lineTotal, taxAmount } = calculateLineTotal(item, undefined, undefined, newTaxPercentage, taxInclusive);
@@ -271,7 +271,7 @@ export function CreateCreditNoteModal({
     }).format(amount);
   };
 
-  const subtotal = items.reduce((sum, item) => sum + (item.quantity * item.unit_price), 0);
+  const subtotal = items.reduce((sum, item) => sum + (Number(item.quantity) * Number(item.unit_price)), 0);
   const taxAmount = items.reduce((sum, item) => sum + (item.tax_amount || 0), 0);
   const totalAmount = items.reduce((sum, item) => sum + item.line_total, 0);
 
@@ -300,8 +300,8 @@ export function CreateCreditNoteModal({
     // Validate items
     const invalidItems = items.filter(item =>
       !item.description.trim() ||
-      item.quantity <= 0 ||
-      item.unit_price < 0
+      Number(item.quantity) <= 0 ||
+      Number(item.unit_price) < 0
     );
 
     if (invalidItems.length > 0) {
@@ -342,12 +342,12 @@ export function CreateCreditNoteModal({
       const creditNoteItems = items.map((item, index) => ({
         product_id: item.product_id || null,
         description: item.description,
-        quantity: item.quantity,
-        unit_price: item.unit_price,
-        tax_percentage: item.tax_percentage,
-        tax_amount: item.tax_amount,
+        quantity: Number(item.quantity),
+        unit_price: Number(item.unit_price),
+        tax_percentage: Number(item.tax_percentage || 0),
+        tax_amount: Number(item.tax_amount || 0),
         tax_inclusive: item.tax_inclusive,
-        tax_setting_id: item.tax_percentage > 0 ? defaultTax?.id || null : null,
+        tax_setting_id: Number(item.tax_percentage || 0) > 0 ? defaultTax?.id || null : null,
         line_total: item.line_total,
         sort_order: index
       }));
@@ -631,25 +631,27 @@ export function CreateCreditNoteModal({
                         <Input
                           type="number"
                           value={item.quantity}
-                          onChange={(e) => updateItemQuantity(item.id, parseInt(e.target.value) || 0)}
+                          onChange={(e) => updateItemQuantity(item.id, e.target.value)}
                           className="w-20"
                           min="1"
+                          placeholder="0"
                         />
                       </TableCell>
                       <TableCell>
                         <Input
                           type="number"
                           value={item.unit_price}
-                          onChange={(e) => updateItemPrice(item.id, parseFloat(e.target.value) || 0)}
+                          onChange={(e) => updateItemPrice(item.id, e.target.value)}
                           className="w-24"
                           step="0.01"
+                          placeholder="0.00"
                         />
                       </TableCell>
                       <TableCell>
                         <Input
                           type="number"
                           value={item.tax_percentage}
-                          onChange={(e) => updateItemTax(item.id, parseFloat(e.target.value) || 0)}
+                          onChange={(e) => updateItemTax(item.id, e.target.value)}
                           className="w-20"
                           min="0"
                           max="100"

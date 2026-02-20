@@ -35,7 +35,7 @@ export const EditCategoryModal = ({
     slug: '',
     icon: '📦',
     description: '',
-    display_order: 0,
+    display_order: '' as any,
     is_active: true,
   });
   const { updateCategory, loading } = useWebManager();
@@ -56,7 +56,10 @@ export const EditCategoryModal = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await updateCategory(category.id, formData);
+      await updateCategory(category.id, {
+        ...formData,
+        display_order: Number(formData.display_order || 0),
+      });
       onOpenChange(false);
       onSuccess();
     } catch (error) {
@@ -134,7 +137,7 @@ export const EditCategoryModal = ({
               onChange={(e) =>
                 setFormData((prev) => ({
                   ...prev,
-                  display_order: parseInt(e.target.value, 10),
+                  display_order: e.target.value,
                 }))
               }
               placeholder="0"

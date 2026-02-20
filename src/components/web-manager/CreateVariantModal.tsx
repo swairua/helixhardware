@@ -41,7 +41,7 @@ export const CreateVariantModal = ({
     slug: '',
     description: '',
     image_path: '',
-    display_order: 0,
+    display_order: '' as any,
     is_active: true,
   });
   const [variantImages, setVariantImages] = useState<VariantImage[]>([]);
@@ -70,7 +70,10 @@ export const CreateVariantModal = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const newVariant = await createVariant(formData);
+      const newVariant = await createVariant({
+        ...formData,
+        display_order: Number(formData.display_order || 0),
+      });
 
       // Save images if any were uploaded
       if (variantImages.length > 0 && newVariant) {
@@ -91,7 +94,7 @@ export const CreateVariantModal = ({
         slug: '',
         description: '',
         image_path: '',
-        display_order: 0,
+        display_order: '' as any,
         is_active: true,
       });
       setVariantImages([]);
@@ -215,7 +218,7 @@ export const CreateVariantModal = ({
               onChange={(e) =>
                 setFormData((prev) => ({
                   ...prev,
-                  display_order: parseInt(e.target.value, 10),
+                  display_order: e.target.value,
                 }))
               }
               placeholder="0"

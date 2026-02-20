@@ -58,7 +58,7 @@ export function EditPaymentModal({
   payment,
 }: EditPaymentModalProps) {
   const [formData, setFormData] = useState({
-    amount: 0,
+    amount: '' as string | number,
     payment_date: '',
     payment_method: '',
     reference_number: ''
@@ -108,7 +108,7 @@ export function EditPaymentModal({
       return;
     }
 
-    if (!formData.amount || formData.amount === 0) {
+    if (!formData.amount || Number(formData.amount) === 0) {
       toast.error('Please enter a valid payment amount');
       return;
     }
@@ -123,7 +123,7 @@ export function EditPaymentModal({
       await updatePaymentMutation.mutateAsync({
         paymentId: payment.id,
         paymentData: {
-          amount: formData.amount,
+          amount: Number(formData.amount),
           payment_date: formData.payment_date,
           payment_method: formData.payment_method,
           reference_number: formData.reference_number
@@ -196,8 +196,9 @@ export function EditPaymentModal({
                       step="0.01"
                       min="0"
                       value={formData.amount}
-                      onChange={(e) => handleInputChange('amount', parseFloat(e.target.value) || 0)}
+                      onChange={(e) => handleInputChange('amount', e.target.value)}
                       className="pl-10"
+                      placeholder="0.00"
                     />
                   </div>
                   {amountChanged && (
@@ -296,13 +297,13 @@ export function EditPaymentModal({
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">New Amount:</span>
-                  <span className="font-medium text-success">{formatCurrency(formData.amount)}</span>
+                  <span className="font-medium text-success">{formatCurrency(Number(formData.amount || 0))}</span>
                 </div>
-                {amountChanged && formData.amount !== payment.amount && (
+                {amountChanged && Number(formData.amount || 0) !== payment.amount && (
                   <div className="flex justify-between text-sm pt-2 border-t">
                     <span className="text-muted-foreground">Difference:</span>
-                    <span className={`font-semibold ${formData.amount > payment.amount ? 'text-success' : 'text-destructive'}`}>
-                      {formData.amount > payment.amount ? '+' : ''}{formatCurrency(formData.amount - payment.amount)}
+                    <span className={`font-semibold ${Number(formData.amount || 0) > payment.amount ? 'text-success' : 'text-destructive'}`}>
+                      {Number(formData.amount || 0) > payment.amount ? '+' : ''}{formatCurrency(Number(formData.amount || 0) - payment.amount)}
                     </span>
                   </div>
                 )}

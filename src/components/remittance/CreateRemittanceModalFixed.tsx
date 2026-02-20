@@ -38,9 +38,9 @@ interface RemittanceItem {
   date: string;
   invoiceNumber: string;
   creditNote: string;
-  invoiceAmount: number;
-  creditAmount: number;
-  payment: number;
+  invoiceAmount: number | string;
+  creditAmount: number | string;
+  payment: number | string;
 }
 
 export function CreateRemittanceModal({ open, onOpenChange, onSuccess }: CreateRemittanceModalProps) {
@@ -64,9 +64,9 @@ export function CreateRemittanceModal({ open, onOpenChange, onSuccess }: CreateR
     date: new Date().toISOString().split('T')[0],
     invoiceNumber: '',
     creditNote: '',
-    invoiceAmount: 0,
-    creditAmount: 0,
-    payment: 0,
+    invoiceAmount: '',
+    creditAmount: '',
+    payment: '',
   }]);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -124,9 +124,9 @@ export function CreateRemittanceModal({ open, onOpenChange, onSuccess }: CreateR
       date: new Date().toISOString().split('T')[0],
       invoiceNumber: '',
       creditNote: '',
-      invoiceAmount: 0,
-      creditAmount: 0,
-      payment: 0,
+      invoiceAmount: '',
+      creditAmount: '',
+      payment: '',
     };
     setItems([...items, newItem]);
   };
@@ -144,7 +144,7 @@ export function CreateRemittanceModal({ open, onOpenChange, onSuccess }: CreateR
   };
 
   const calculateTotalPayment = () => {
-    return items.reduce((total, item) => total + (item.payment || 0), 0);
+    return items.reduce((total, item) => total + (Number(item.payment) || 0), 0);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -169,7 +169,7 @@ export function CreateRemittanceModal({ open, onOpenChange, onSuccess }: CreateR
         return;
       }
 
-      if (items.some(item => !item.date || item.payment === 0)) {
+      if (items.some(item => !item.date || Number(item.payment) === 0)) {
         toast.error('All items must have a date and payment amount');
         return;
       }
@@ -214,9 +214,9 @@ export function CreateRemittanceModal({ open, onOpenChange, onSuccess }: CreateR
         date: new Date().toISOString().split('T')[0],
         invoiceNumber: '',
         creditNote: '',
-        invoiceAmount: 0,
-        creditAmount: 0,
-        payment: 0,
+        invoiceAmount: '',
+        creditAmount: '',
+        payment: '',
       }]);
       
     } catch (error: any) {
@@ -376,7 +376,7 @@ export function CreateRemittanceModal({ open, onOpenChange, onSuccess }: CreateR
                           type="number"
                           step="0.01"
                           value={item.invoiceAmount}
-                          onChange={(e) => updateItem(item.id, 'invoiceAmount', parseFloat(e.target.value) || 0)}
+                          onChange={(e) => updateItem(item.id, 'invoiceAmount', e.target.value)}
                           placeholder="0.00"
                           className="w-32"
                         />
@@ -386,7 +386,7 @@ export function CreateRemittanceModal({ open, onOpenChange, onSuccess }: CreateR
                           type="number"
                           step="0.01"
                           value={item.creditAmount}
-                          onChange={(e) => updateItem(item.id, 'creditAmount', parseFloat(e.target.value) || 0)}
+                          onChange={(e) => updateItem(item.id, 'creditAmount', e.target.value)}
                           placeholder="0.00"
                           className="w-32"
                         />
@@ -396,7 +396,7 @@ export function CreateRemittanceModal({ open, onOpenChange, onSuccess }: CreateR
                           type="number"
                           step="0.01"
                           value={item.payment}
-                          onChange={(e) => updateItem(item.id, 'payment', parseFloat(e.target.value) || 0)}
+                          onChange={(e) => updateItem(item.id, 'payment', e.target.value)}
                           placeholder="0.00"
                           className="w-32"
                           required

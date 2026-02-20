@@ -38,7 +38,7 @@ interface CategoryData {
   parent_id: string;
   category_code: string;
   color: string;
-  sort_order: number;
+  sort_order: number | string;
 }
 
 export function CreateCategoryModal({ open, onOpenChange, onSuccess }: CreateCategoryModalProps) {
@@ -48,7 +48,7 @@ export function CreateCategoryModal({ open, onOpenChange, onSuccess }: CreateCat
     parent_id: '',
     category_code: '',
     color: '#3B82F6', // Default blue color
-    sort_order: 0
+    sort_order: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { currentCompany } = useCurrentCompany();
@@ -122,7 +122,7 @@ export function CreateCategoryModal({ open, onOpenChange, onSuccess }: CreateCat
           parent_id: (categoryData.parent_id && categoryData.parent_id !== 'none') ? categoryData.parent_id : null,
           category_code: categoryData.category_code.trim() || null,
           color: categoryData.color || null,
-          sort_order: categoryData.sort_order || nextSortOrder,
+          sort_order: Number(categoryData.sort_order || 0) || nextSortOrder,
           created_by: user.id,
           updated_by: user.id,
           is_active: true
@@ -263,7 +263,7 @@ export function CreateCategoryModal({ open, onOpenChange, onSuccess }: CreateCat
       parent_id: '',
       category_code: '',
       color: '#3B82F6',
-      sort_order: 0
+      sort_order: ''
     });
   };
 
@@ -370,7 +370,7 @@ export function CreateCategoryModal({ open, onOpenChange, onSuccess }: CreateCat
                     id="sort-order"
                     type="number"
                     value={formData.sort_order}
-                    onChange={(e) => handleInputChange('sort_order', parseInt(e.target.value) || 0)}
+                    onChange={(e) => handleInputChange('sort_order', e.target.value)}
                     placeholder="0"
                     min="0"
                   />

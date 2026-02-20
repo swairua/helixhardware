@@ -29,7 +29,7 @@ export const CreateCategoryModal = ({ open, onOpenChange, onSuccess }: CreateCat
     slug: '',
     icon: '📦',
     description: '',
-    display_order: 0,
+    display_order: '' as any,
     is_active: true,
   });
   const { createCategory, loading } = useWebManager();
@@ -53,13 +53,16 @@ export const CreateCategoryModal = ({ open, onOpenChange, onSuccess }: CreateCat
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await createCategory(formData);
+      await createCategory({
+        ...formData,
+        display_order: Number(formData.display_order || 0),
+      });
       setFormData({
         name: '',
         slug: '',
         icon: '📦',
         description: '',
-        display_order: 0,
+        display_order: '' as any,
         is_active: true,
       });
       onOpenChange(false);
@@ -141,7 +144,7 @@ export const CreateCategoryModal = ({ open, onOpenChange, onSuccess }: CreateCat
               onChange={(e) =>
                 setFormData((prev) => ({
                   ...prev,
-                  display_order: parseInt(e.target.value, 10),
+                  display_order: e.target.value,
                 }))
               }
               placeholder="0"

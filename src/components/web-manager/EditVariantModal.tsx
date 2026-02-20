@@ -43,7 +43,7 @@ export const EditVariantModal = ({
     slug: '',
     description: '',
     image_path: '',
-    display_order: 0,
+    display_order: '' as any,
     is_active: true,
   });
   const [variantImages, setVariantImages] = useState<VariantImage[]>([]);
@@ -79,7 +79,10 @@ export const EditVariantModal = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await updateVariant(variant.id, formData);
+      await updateVariant(variant.id, {
+        ...formData,
+        display_order: Number(formData.display_order || 0),
+      });
 
       // Save images
       try {
@@ -206,7 +209,7 @@ export const EditVariantModal = ({
               onChange={(e) =>
                 setFormData((prev) => ({
                   ...prev,
-                  display_order: parseInt(e.target.value, 10),
+                  display_order: e.target.value,
                 }))
               }
               placeholder="0"

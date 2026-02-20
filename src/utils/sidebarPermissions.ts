@@ -32,10 +32,6 @@ export const SIDEBAR_PERMISSION_MAP: Record<string, Permission | Permission[]> =
   // Customers
   'Customers': 'view_customer',
 
-  // Purchase Orders submenu items
-  'Local Purchase Orders': 'view_lpo',
-  'Suppliers': 'view_lpo',
-
   // Reports submenu items
   'Sales Reports': 'view_sales_reports',
   'Inventory Reports': 'view_inventory_reports',

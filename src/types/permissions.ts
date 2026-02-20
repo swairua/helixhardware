@@ -64,12 +64,6 @@ export type Permission =
   | 'edit_delivery_note'
   | 'delete_delivery_note'
 
-  // LPO Permissions
-  | 'create_lpo'
-  | 'view_lpo'
-  | 'edit_lpo'
-  | 'delete_lpo'
-
   // Remittance Permissions
   | 'create_remittance'
   | 'view_remittance'
@@ -124,7 +118,6 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<Exclude<RoleType, 'custom'>, Permi
     'view_reports', 'export_reports', 'view_customer_reports', 'view_inventory_reports', 'view_sales_reports',
     'create_customer', 'view_customer', 'edit_customer', 'delete_customer',
     'create_delivery_note', 'view_delivery_note', 'edit_delivery_note', 'delete_delivery_note',
-    'create_lpo', 'view_lpo', 'edit_lpo', 'delete_lpo',
     'create_remittance', 'view_remittance', 'edit_remittance', 'delete_remittance',
     'create_user', 'edit_user', 'delete_user', 'manage_users', 'approve_users', 'invite_users',
     'view_audit_logs', 'manage_roles', 'manage_permissions', 'access_settings',
@@ -138,7 +131,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<Exclude<RoleType, 'custom'>, Permi
     'create_payment', 'view_payment', 'edit_payment',
     'view_inventory', 'view_reports', 'export_reports', 'view_customer_reports', 'view_sales_reports',
     'view_customer', 'view_delivery_note',
-    'view_lpo', 'view_remittance', 'create_remittance', 'view_audit_logs',
+    'view_remittance', 'create_remittance', 'view_audit_logs',
   ],
   stock_manager: [
     // Stock managers handle inventory and delivery notes
@@ -148,7 +141,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<Exclude<RoleType, 'custom'>, Permi
     'create_inventory', 'view_inventory', 'edit_inventory', 'manage_inventory',
     'view_reports', 'view_inventory_reports',
     'view_customer', 'create_delivery_note', 'view_delivery_note', 'edit_delivery_note',
-    'view_lpo', 'view_payment',
+    'view_payment',
   ],
   user: [
     // Basic users have limited viewing permissions
@@ -156,7 +149,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<Exclude<RoleType, 'custom'>, Permi
     'view_invoice', 'view_credit_note', 'view_proforma',
     'view_inventory', 'view_reports', 'view_customer_reports', 'view_sales_reports',
     'view_customer', 'view_delivery_note',
-    'view_lpo', 'view_payment',
+    'view_payment',
   ],
 };
 
@@ -220,12 +213,6 @@ export const PERMISSION_DESCRIPTIONS: Record<Permission, string> = {
   'view_delivery_note': 'View delivery notes',
   'edit_delivery_note': 'Edit delivery notes',
   'delete_delivery_note': 'Delete delivery notes',
-
-  // LPO
-  'create_lpo': 'Create local purchase orders',
-  'view_lpo': 'View local purchase orders',
-  'edit_lpo': 'Edit local purchase orders',
-  'delete_lpo': 'Delete local purchase orders',
 
   // Remittance
   'create_remittance': 'Create remittance advice',

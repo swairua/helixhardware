@@ -97,14 +97,6 @@ const sidebarItems: SidebarItem[] = [
     href: '/app/customers'
   },
   {
-    title: 'Purchase Orders',
-    icon: ShoppingCart,
-    children: [
-      { title: 'Local Purchase Orders', icon: ShoppingCart, href: '/app/lpos' },
-      { title: 'Suppliers', icon: Building2, href: '/app/suppliers' }
-    ]
-  },
-  {
     title: 'Reports',
     icon: BarChart3,
     children: [

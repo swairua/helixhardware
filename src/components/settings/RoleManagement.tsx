@@ -70,7 +70,6 @@ const PERMISSION_GROUPS: Record<string, Permission[]> = {
   'Reports': ['view_reports', 'export_reports', 'view_customer_reports', 'view_inventory_reports', 'view_sales_reports'],
   'Customers': ['create_customer', 'view_customer', 'edit_customer', 'delete_customer'],
   'Delivery Notes': ['create_delivery_note', 'view_delivery_note', 'edit_delivery_note', 'delete_delivery_note'],
-  'Purchase Orders': ['create_lpo', 'view_lpo', 'edit_lpo', 'delete_lpo'],
   'Remittance': ['create_remittance', 'view_remittance', 'edit_remittance', 'delete_remittance'],
   'User Management': ['create_user', 'edit_user', 'delete_user', 'manage_users', 'approve_users', 'invite_users'],
   'Settings & Admin': ['view_audit_logs', 'manage_roles', 'manage_permissions', 'access_settings'],

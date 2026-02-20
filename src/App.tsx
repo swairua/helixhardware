@@ -235,30 +235,6 @@ const App = () => {
 
                 {/* Procurement & Inventory */}
                 <Route
-                  path="/app/lpos"
-                  element={
-                    <ProtectedRoute requireAuth={true}>
-                      <LPOs />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/app/lpos/new"
-                  element={
-                    <ProtectedRoute requireAuth={true}>
-                      <LPOs />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/app/suppliers"
-                  element={
-                    <ProtectedRoute requireAuth={true}>
-                      <Suppliers />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
                   path="/app/inventory"
                   element={
                     <ProtectedRoute requireAuth={true}>

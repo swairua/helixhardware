@@ -168,12 +168,17 @@ export class ExternalAPIAdapter implements IDatabase {
   private async attemptTokenRefresh(): Promise<void> {
     try {
       const userId = localStorage.getItem('med_api_user_id');
+      const currentToken = this.getAuthToken();
+
       // Use the stored external API URL for token refresh endpoint construction
       const refreshUrl = `${this.apiBase}?action=refresh_token`;
 
       const response = await fetch(refreshUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(currentToken && { 'Authorization': `Bearer ${currentToken}` })
+        },
         body: JSON.stringify({ user_id: userId }),
       });
 
@@ -183,12 +188,15 @@ export class ExternalAPIAdapter implements IDatabase {
         // Store the new token
         this.setAuthToken(result.token);
         console.log('✅ Token refreshed automatically');
-      } else {
-        // If refresh fails, clear auth and require re-login
-        console.warn('⚠️ Token refresh failed, clearing authentication');
+      } else if (response.status === 401 || response.status === 403) {
+        // Only clear auth on authentication/authorization errors, not network errors
+        console.warn('⚠️ Token refresh failed with auth error, clearing authentication');
         this.clearAuthToken();
         localStorage.removeItem('med_api_user_id');
         localStorage.removeItem('med_api_user_email');
+      } else {
+        // For other errors, just log but don't clear auth - allow retry on next request
+        console.warn(`⚠️ Token refresh failed (HTTP ${response.status}), will retry on next request`);
       }
     } catch (error) {
       console.warn('⚠️ Token refresh error:', error);

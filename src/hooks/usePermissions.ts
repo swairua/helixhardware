@@ -69,6 +69,29 @@ export const usePermissions = () => {
         return;
       }
 
+      // Guard: Cannot fetch role without company_id
+      if (!currentUser.company_id) {
+        console.warn('⚠️ Cannot fetch role - company_id is missing from user profile');
+        // Use fallback permissions based on role type
+        const roleType = (userRole in DEFAULT_ROLE_PERMISSIONS)
+          ? userRole as keyof typeof DEFAULT_ROLE_PERMISSIONS
+          : 'user';
+        const fallbackRole: RoleDefinition = {
+          id: `fallback-${userRole}`,
+          name: userRole,
+          role_type: roleType,
+          description: `Fallback ${userRole} role`,
+          permissions: DEFAULT_ROLE_PERMISSIONS[roleType],
+          company_id: '',
+          is_default: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+        setRole(fallbackRole);
+        setLoading(false);
+        return;
+      }
+
       // Fetch the full role definition from the roles table
       const { data, error: fetchError } = await supabase
         .from('roles')
@@ -199,9 +222,15 @@ export const usePermissions = () => {
   }, [currentUser]);
 
   // Fetch user role on mount or when user changes
+  // Only fetch if user is actually authenticated (has an id)
   useEffect(() => {
-    fetchUserRole();
-  }, [fetchUserRole]);
+    if (currentUser?.id) {
+      fetchUserRole();
+    } else {
+      setRole(null);
+      setLoading(false);
+    }
+  }, [fetchUserRole, currentUser?.id]);
 
   /**
    * Check if current user has a specific permission

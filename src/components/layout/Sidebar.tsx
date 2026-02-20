@@ -29,6 +29,9 @@ import {
 import { BiolegendLogo } from '@/components/ui/biolegend-logo';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCurrentCompany } from '@/contexts/CompanyContext';
+import { usePermissions } from '@/hooks/usePermissions';
+import { hasPermission } from '@/utils/permissionChecker';
+import { SIDEBAR_PERMISSION_MAP } from '@/utils/sidebarPermissions';
 
 interface SidebarItem {
   title: string;
@@ -145,6 +148,7 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
   const location = useLocation();
   const { profile } = useAuth();
   const { currentCompany } = useCurrentCompany();
+  const { role } = usePermissions();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
 
   const toggleExpanded = (title: string) => {
@@ -156,12 +160,28 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
   };
 
   const isItemVisible = (item: SidebarItem): boolean => {
-    // If no allowed roles specified, item is visible to everyone
-    if (!item.allowedRoles || item.allowedRoles.length === 0) {
-      return true;
+    // First check allowedRoles for backward compatibility (admin-only sections)
+    if (item.allowedRoles && item.allowedRoles.length > 0) {
+      if (!item.allowedRoles.includes(profile?.role || '')) {
+        return false;
+      }
     }
-    // Check if user's role is in allowed roles
-    return item.allowedRoles.includes(profile?.role || '');
+
+    // Then check granular permissions
+    const requiredPermission = SIDEBAR_PERMISSION_MAP[item.title];
+    if (requiredPermission) {
+      // Handle both single permission and array of permissions
+      if (Array.isArray(requiredPermission)) {
+        // If an array is provided, check if role has any of the permissions
+        return requiredPermission.some(permission => hasPermission(role, permission));
+      } else {
+        // Check single permission
+        return hasPermission(role, requiredPermission);
+      }
+    }
+
+    // If no specific permission mapping, allow by default
+    return true;
   };
 
   const isItemActive = (href?: string) => {

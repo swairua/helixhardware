@@ -33,8 +33,8 @@ interface RestockItemModalProps {
 
 export function RestockItemModal({ open, onOpenChange, onSuccess, item }: RestockItemModalProps) {
   const [restockData, setRestockData] = useState({
-    quantity: item?.minStock * 2 || 50,
-    cost_per_unit: 0,
+    quantity: (item?.minStock * 2 || 50) as string | number,
+    cost_per_unit: '' as string | number,
     supplier: item?.supplier || '',
     restock_date: new Date().toISOString().split('T')[0],
     reference_number: '',
@@ -54,11 +54,11 @@ export function RestockItemModal({ open, onOpenChange, onSuccess, item }: Restoc
     }));
   };
 
-  const newStockLevel = (item?.currentStock || 0) + restockData.quantity;
-  const totalCost = restockData.quantity * restockData.cost_per_unit;
+  const newStockLevel = (item?.currentStock || 0) + Number(restockData.quantity || 0);
+  const totalCost = Number(restockData.quantity || 0) * Number(restockData.cost_per_unit || 0);
 
   const handleSubmit = async () => {
-    if (!restockData.quantity || restockData.quantity <= 0) {
+    if (!restockData.quantity || Number(restockData.quantity) <= 0) {
       toast.error('Please enter a valid restock quantity');
       return;
     }
@@ -78,8 +78,8 @@ export function RestockItemModal({ open, onOpenChange, onSuccess, item }: Restoc
       // Create restock record with stock movement and product update
       await restockProduct.mutateAsync({
         productId: item.id,
-        quantity: restockData.quantity,
-        costPerUnit: restockData.cost_per_unit,
+        quantity: Number(restockData.quantity),
+        costPerUnit: Number(restockData.cost_per_unit || 0),
         companyId: currentCompany.id,
         supplier: restockData.supplier,
         notes: restockData.notes ?
@@ -102,8 +102,8 @@ export function RestockItemModal({ open, onOpenChange, onSuccess, item }: Restoc
 
   const resetForm = () => {
     setRestockData({
-      quantity: item?.minStock * 2 || 50,
-      cost_per_unit: 0,
+      quantity: (item?.minStock * 2 || 50) as string | number,
+      cost_per_unit: '',
       supplier: item?.supplier || '',
       restock_date: new Date().toISOString().split('T')[0],
       reference_number: '',
@@ -192,7 +192,7 @@ export function RestockItemModal({ open, onOpenChange, onSuccess, item }: Restoc
                   id="quantity"
                   type="number"
                   value={restockData.quantity}
-                  onChange={(e) => handleInputChange('quantity', parseInt(e.target.value) || 0)}
+                  onChange={(e) => handleInputChange('quantity', e.target.value)}
                   min="1"
                   placeholder="Enter quantity to add"
                 />
@@ -207,7 +207,7 @@ export function RestockItemModal({ open, onOpenChange, onSuccess, item }: Restoc
                   id="cost_per_unit"
                   type="number"
                   value={restockData.cost_per_unit}
-                  onChange={(e) => handleInputChange('cost_per_unit', parseFloat(e.target.value) || 0)}
+                  onChange={(e) => handleInputChange('cost_per_unit', e.target.value)}
                   min="0"
                   step="0.01"
                   placeholder="0.00"

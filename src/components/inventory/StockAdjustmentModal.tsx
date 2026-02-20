@@ -40,7 +40,7 @@ interface StockAdjustmentModalProps {
 
 export function StockAdjustmentModal({ open, onOpenChange, onSuccess, item }: StockAdjustmentModalProps) {
   const [adjustmentType, setAdjustmentType] = useState<'increase' | 'decrease' | 'set'>('increase');
-  const [quantity, setQuantity] = useState<number>(0);
+  const [quantity, setQuantity] = useState<number | string>('');
   const [reason, setReason] = useState<string | undefined>(undefined);
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -48,17 +48,17 @@ export function StockAdjustmentModal({ open, onOpenChange, onSuccess, item }: St
   const handleSubmit = async () => {
     if (!item) return;
 
-    if (quantity <= 0 && adjustmentType !== 'set') {
+    if (Number(quantity) <= 0 && adjustmentType !== 'set') {
       toast.error('Quantity must be greater than 0');
       return;
     }
 
-    if (adjustmentType === 'set' && quantity < 0) {
+    if (adjustmentType === 'set' && Number(quantity) < 0) {
       toast.error('Stock quantity cannot be negative');
       return;
     }
 
-    if (adjustmentType === 'decrease' && quantity > item.stock_quantity) {
+    if (adjustmentType === 'decrease' && Number(quantity) > item.stock_quantity) {
       toast.error('Cannot decrease stock below zero');
       return;
     }
@@ -75,13 +75,13 @@ export function StockAdjustmentModal({ open, onOpenChange, onSuccess, item }: St
       let newQuantity: number;
       switch (adjustmentType) {
         case 'increase':
-          newQuantity = item.stock_quantity + quantity;
+          newQuantity = item.stock_quantity + Number(quantity);
           break;
         case 'decrease':
-          newQuantity = item.stock_quantity - quantity;
+          newQuantity = item.stock_quantity - Number(quantity);
           break;
         case 'set':
-          newQuantity = quantity;
+          newQuantity = Number(quantity);
           break;
         default:
           newQuantity = item.stock_quantity;
@@ -96,13 +96,13 @@ export function StockAdjustmentModal({ open, onOpenChange, onSuccess, item }: St
         product_code: item.product_code,
         adjustment_type: adjustmentType,
         old_quantity: item.stock_quantity,
-        adjustment_quantity: adjustmentType === 'set' ? quantity : quantity,
+        adjustment_quantity: adjustmentType === 'set' ? Number(quantity) : Number(quantity),
         new_quantity: newQuantity,
         reason,
         notes,
-        cost_impact: adjustmentType === 'increase' ? quantity * item.cost_price : 
-                    adjustmentType === 'decrease' ? -quantity * item.cost_price :
-                    (quantity - item.stock_quantity) * item.cost_price,
+        cost_impact: adjustmentType === 'increase' ? Number(quantity) * item.cost_price :
+                    adjustmentType === 'decrease' ? -Number(quantity) * item.cost_price :
+                    (Number(quantity) - item.stock_quantity) * item.cost_price,
         adjustment_date: new Date().toISOString(),
       };
 
@@ -126,7 +126,7 @@ export function StockAdjustmentModal({ open, onOpenChange, onSuccess, item }: St
 
   const handleClose = () => {
     setAdjustmentType('increase');
-    setQuantity(0);
+    setQuantity('');
     setReason(undefined);
     setNotes('');
     onOpenChange(false);
@@ -134,13 +134,14 @@ export function StockAdjustmentModal({ open, onOpenChange, onSuccess, item }: St
 
   const getNewQuantity = () => {
     if (!item) return 0;
+    const qty = Number(quantity || 0);
     switch (adjustmentType) {
       case 'increase':
-        return item.stock_quantity + quantity;
+        return item.stock_quantity + qty;
       case 'decrease':
-        return Math.max(0, item.stock_quantity - quantity);
+        return Math.max(0, item.stock_quantity - qty);
       case 'set':
-        return quantity;
+        return qty;
       default:
         return item.stock_quantity;
     }
@@ -241,7 +242,7 @@ export function StockAdjustmentModal({ open, onOpenChange, onSuccess, item }: St
                 id="quantity"
                 type="number"
                 value={quantity}
-                onChange={(e) => setQuantity(parseInt(e.target.value) || 0)}
+                onChange={(e) => setQuantity(e.target.value)}
                 placeholder={adjustmentType === 'set' ? 'Enter exact quantity' : 'Enter adjustment quantity'}
                 min="0"
               />
@@ -281,7 +282,7 @@ export function StockAdjustmentModal({ open, onOpenChange, onSuccess, item }: St
           </div>
 
           {/* Preview */}
-          {quantity > 0 && (
+          {Number(quantity) > 0 && (
             <Card className="border-primary/20 bg-primary/5">
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
@@ -310,7 +311,7 @@ export function StockAdjustmentModal({ open, onOpenChange, onSuccess, item }: St
                   <div className="mt-4 text-center">
                     <Label className="text-sm text-muted-foreground">Cost Impact</Label>
                     <p className="text-lg font-medium">
-                      {adjustmentType === 'increase' ? '+' : '-'}${(quantity * item.cost_price).toFixed(2)}
+                      {adjustmentType === 'increase' ? '+' : '-'}${(Number(quantity) * item.cost_price).toFixed(2)}
                     </p>
                   </div>
                 )}
@@ -323,9 +324,9 @@ export function StockAdjustmentModal({ open, onOpenChange, onSuccess, item }: St
           <Button variant="outline" onClick={handleClose} disabled={isSubmitting}>
             Cancel
           </Button>
-          <Button 
-            onClick={handleSubmit} 
-            disabled={isSubmitting || quantity <= 0 || !reason}
+          <Button
+            onClick={handleSubmit}
+            disabled={isSubmitting || (Number(quantity) <= 0 && adjustmentType !== 'set') || !reason}
             className="min-w-[120px]"
           >
             {isSubmitting ? 'Processing...' : 'Apply Adjustment'}

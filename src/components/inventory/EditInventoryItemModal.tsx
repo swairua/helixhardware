@@ -74,10 +74,10 @@ export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: 
     description: '',
     category_id: '__none__', // Always use string, never null
     unit_of_measure: '',
-    cost_price: 0,
-    unit_price: 0,
-    stock_quantity: 0,
-    reorder_level: 10
+    cost_price: '' as string | number,
+    unit_price: '' as string | number,
+    stock_quantity: '' as string | number,
+    reorder_level: '' as string | number
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showCreateCategory, setShowCreateCategory] = useState(false);
@@ -118,10 +118,10 @@ export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: 
         description: item.description || '',
         category_id: item.category_id || '__none__',
         unit_of_measure: item.unit_of_measure || 'pieces',
-        cost_price: Number(item.cost_price || 0),
-        unit_price: Number(item.unit_price || item.selling_price || 0),
-        stock_quantity: Number(item.stock_quantity || 0),
-        reorder_level: Number(item.reorder_level || item.minimum_stock_level || item.min_stock_level || 10)
+        cost_price: item.cost_price || '',
+        unit_price: item.unit_price || item.selling_price || '',
+        stock_quantity: item.stock_quantity || '',
+        reorder_level: item.reorder_level || item.minimum_stock_level || item.min_stock_level || ''
       });
     }
   }, [item, open]);
@@ -189,12 +189,12 @@ export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: 
       return;
     }
 
-    if (formData.unit_price <= 0) {
+    if (Number(formData.unit_price) <= 0) {
       toast.error('Selling price must be greater than 0');
       return;
     }
 
-    if (formData.reorder_level < 0) {
+    if (Number(formData.reorder_level) < 0) {
       toast.error('Reorder level cannot be negative');
       return;
     }
@@ -220,15 +220,15 @@ export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: 
         description: formData.description,
         category_id: formData.category_id === '__none__' ? null : formData.category_id,
         unit_of_measure: formData.unit_of_measure,
-        cost_price: Number(formData.cost_price),
-        stock_quantity: Number(formData.stock_quantity)
+        cost_price: Number(formData.cost_price || 0),
+        stock_quantity: Number(formData.stock_quantity || 0)
       };
 
       const updatedData = {
         ...baseData,
         sku: formData.sku,
-        unit_price: Number(formData.unit_price),
-        reorder_level: Number(formData.reorder_level),
+        unit_price: Number(formData.unit_price || 0),
+        reorder_level: Number(formData.reorder_level || 0),
         status: 'active'
       };
 
@@ -265,15 +265,14 @@ export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: 
   const resetForm = () => {
     setFormData({
       name: '',
-      product_code: '',
+      sku: '',
       description: '',
       category_id: '__none__',
       unit_of_measure: 'pieces',
-      cost_price: 0,
-      selling_price: 0,
-      stock_quantity: 0,
-      min_stock_level: 10,
-      max_stock_level: 100
+      cost_price: '',
+      unit_price: '',
+      stock_quantity: '',
+      reorder_level: ''
     });
   };
 
@@ -412,7 +411,7 @@ export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: 
                   id="cost_price"
                   type="number"
                   value={formData.cost_price}
-                  onChange={(e) => handleInputChange('cost_price', parseFloat(e.target.value) || 0)}
+                  onChange={(e) => handleInputChange('cost_price', e.target.value)}
                   placeholder="0.00"
                   min="0"
                   step="0.01"
@@ -425,7 +424,7 @@ export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: 
                   id="unit_price"
                   type="number"
                   value={formData.unit_price}
-                  onChange={(e) => handleInputChange('unit_price', parseFloat(e.target.value) || 0)}
+                  onChange={(e) => handleInputChange('unit_price', e.target.value)}
                   placeholder="0.00"
                   min="0"
                   step="0.01"
@@ -439,7 +438,7 @@ export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: 
                 id="stock_quantity"
                 type="number"
                 value={formData.stock_quantity}
-                onChange={(e) => handleInputChange('stock_quantity', parseInt(e.target.value) || 0)}
+                onChange={(e) => handleInputChange('stock_quantity', e.target.value)}
                 placeholder="0"
                 min="0"
               />
@@ -452,7 +451,7 @@ export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: 
                   id="reorder_level"
                   type="number"
                   value={formData.reorder_level}
-                  onChange={(e) => handleInputChange('reorder_level', parseInt(e.target.value) || 0)}
+                  onChange={(e) => handleInputChange('reorder_level', e.target.value)}
                   placeholder="10"
                   min="0"
                 />

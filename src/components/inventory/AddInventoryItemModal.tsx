@@ -61,10 +61,10 @@ export function AddInventoryItemModal({ open, onOpenChange, onSuccess }: AddInve
     description: '',
     category_id: '__none__', // Always use string, never null
     unit_of_measure: '',
-    cost_price: 0,
-    unit_price: 0,
-    stock_quantity: 0,
-    reorder_level: 10
+    cost_price: '' as string | number,
+    unit_price: '' as string | number,
+    stock_quantity: '' as string | number,
+    reorder_level: '' as string | number
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showCreateCategory, setShowCreateCategory] = useState(false);
@@ -172,7 +172,7 @@ export function AddInventoryItemModal({ open, onOpenChange, onSuccess }: AddInve
       return;
     }
 
-    if (formData.unit_price <= 0) {
+    if (Number(formData.unit_price) <= 0) {
       toast.error('Selling price must be greater than 0');
       return;
     }
@@ -187,10 +187,10 @@ export function AddInventoryItemModal({ open, onOpenChange, onSuccess }: AddInve
         category_id: formData.category_id === '__none__' || !formData.category_id ? null : formData.category_id,
         sku: formData.sku || generateProductCode(),
         unit_of_measure: formData.unit_of_measure,
-        cost_price: formData.cost_price,
-        unit_price: formData.unit_price,
-        stock_quantity: formData.stock_quantity,
-        reorder_level: formData.reorder_level,
+        cost_price: Number(formData.cost_price || 0),
+        unit_price: Number(formData.unit_price || 0),
+        stock_quantity: Number(formData.stock_quantity || 0),
+        reorder_level: Number(formData.reorder_level || 0),
         status: 'active'
       };
 
@@ -237,10 +237,10 @@ export function AddInventoryItemModal({ open, onOpenChange, onSuccess }: AddInve
       description: '',
       category_id: '__none__', // Always use string, never null
       unit_of_measure: '',
-      cost_price: 0,
-      unit_price: 0,
-      stock_quantity: 0,
-      reorder_level: 10
+      cost_price: '',
+      unit_price: '',
+      stock_quantity: '',
+      reorder_level: ''
     });
   };
 
@@ -397,7 +397,7 @@ export function AddInventoryItemModal({ open, onOpenChange, onSuccess }: AddInve
                     id="cost_price"
                     type="number"
                     value={formData.cost_price}
-                    onChange={(e) => handleInputChange('cost_price', parseFloat(e.target.value) || 0)}
+                    onChange={(e) => handleInputChange('cost_price', e.target.value)}
                     min="0"
                     step="0.01"
                     placeholder="0.00"
@@ -410,7 +410,7 @@ export function AddInventoryItemModal({ open, onOpenChange, onSuccess }: AddInve
                     id="unit_price"
                     type="number"
                     value={formData.unit_price}
-                    onChange={(e) => handleInputChange('unit_price', parseFloat(e.target.value) || 0)}
+                    onChange={(e) => handleInputChange('unit_price', e.target.value)}
                     min="0"
                     step="0.01"
                     placeholder="0.00"
@@ -418,19 +418,19 @@ export function AddInventoryItemModal({ open, onOpenChange, onSuccess }: AddInve
                 </div>
               </div>
 
-              {formData.cost_price > 0 && formData.unit_price > 0 && (
+              {Number(formData.cost_price) > 0 && Number(formData.unit_price) > 0 && (
                 <div className="p-3 bg-muted/50 rounded-lg">
                   <div className="text-sm">
                     <div className="flex justify-between">
                       <span>Margin:</span>
                       <span className="font-medium">
-                        KES {(formData.unit_price - formData.cost_price).toFixed(2)}
+                        KES {(Number(formData.unit_price) - Number(formData.cost_price)).toFixed(2)}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span>Markup:</span>
                       <span className="font-medium">
-                        {formData.cost_price > 0 ? (((formData.unit_price - formData.cost_price) / formData.cost_price) * 100).toFixed(1) : 0}%
+                        {Number(formData.cost_price) > 0 ? (((Number(formData.unit_price) - Number(formData.cost_price)) / Number(formData.cost_price)) * 100).toFixed(1) : 0}%
                       </span>
                     </div>
                   </div>
@@ -445,7 +445,7 @@ export function AddInventoryItemModal({ open, onOpenChange, onSuccess }: AddInve
                     id="stock_quantity"
                     type="number"
                     value={formData.stock_quantity}
-                    onChange={(e) => handleInputChange('stock_quantity', parseInt(e.target.value) || 0)}
+                    onChange={(e) => handleInputChange('stock_quantity', e.target.value)}
                     min="0"
                     className="pl-10"
                     placeholder="0"
@@ -459,7 +459,7 @@ export function AddInventoryItemModal({ open, onOpenChange, onSuccess }: AddInve
                   id="reorder_level"
                   type="number"
                   value={formData.reorder_level}
-                  onChange={(e) => handleInputChange('reorder_level', parseInt(e.target.value) || 0)}
+                  onChange={(e) => handleInputChange('reorder_level', e.target.value)}
                   min="0"
                   placeholder="10"
                 />
@@ -477,7 +477,7 @@ export function AddInventoryItemModal({ open, onOpenChange, onSuccess }: AddInve
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={isSubmitting || !formData.name.trim() || formData.unit_price <= 0 || !formData.unit_of_measure}
+            disabled={isSubmitting || !formData.name.trim() || Number(formData.unit_price) <= 0 || !formData.unit_of_measure}
           >
             <Package className="h-4 w-4 mr-2" />
             {isSubmitting ? 'Adding...' : 'Add Product'}

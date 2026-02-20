@@ -246,8 +246,97 @@ export class ExternalAPIAdapter implements IDatabase {
         // Filter out special parameters (those starting with _) - they should go in URL params separately
         const whereParts: string[] = [];
         Object.entries(where).forEach(([key, value]) => {
+          // Handle Supabase-style OR queries
+          if (key === '_or') {
+            const orParts = String(value).split(',').map(part => {
+              // Supabase .or format: "column.operator.value"
+              const dots = part.split('.');
+              if (dots.length >= 3) {
+                const col = dots[0];
+                const op = dots[1];
+                const val = dots.slice(2).join('.');
+                if (op === 'ilike' || op === 'like') {
+                  return `${col} LIKE '${val.replace(/'/g, "''")}'`;
+                }
+                if (op === 'eq') {
+                  return `${col} = '${val.replace(/'/g, "''")}'`;
+                }
+                if (op === 'is') {
+                  if (val.toLowerCase() === 'null') return `${col} IS NULL`;
+                  return `${col} IS ${val}`;
+                }
+                if (op === 'gt') return `${col} > ${val}`;
+                if (op === 'lt') return `${col} < ${val}`;
+                if (op === 'gte') return `${col} >= ${val}`;
+                if (op === 'lte') return `${col} <= ${val}`;
+                if (op === 'neq') return `${col} <> ${val}`;
+              }
+              return part;
+            });
+            if (orParts.length > 0) {
+              whereParts.push(`(${orParts.join(' OR ')})`);
+            }
+            return;
+          }
+
           // Skip special parameters (pagination, ordering, etc)
           if (key.startsWith('_')) {
+            return;
+          }
+
+          // Handle operator suffixes
+          if (key.endsWith('_ilike') || key.endsWith('_like')) {
+            const col = key.replace(/_i?like$/, '');
+            whereParts.push(`${col} LIKE '${String(value).replace(/'/g, "''")}'`);
+            return;
+          }
+
+          if (key.endsWith('_neq')) {
+            const col = key.replace('_neq', '');
+            if (value === null) {
+              whereParts.push(`${col} IS NOT NULL`);
+            } else {
+              whereParts.push(`${col}<>${typeof value === 'string' ? `'${String(value).replace(/'/g, "''")}'` : value}`);
+            }
+            return;
+          }
+
+          if (key.endsWith('_is')) {
+            const col = key.replace('_is', '');
+            if (value === null) {
+              whereParts.push(`${col} IS NULL`);
+            } else {
+              whereParts.push(`${col} IS ${value}`);
+            }
+            return;
+          }
+
+          if (key.endsWith('_gt')) {
+            whereParts.push(`${key.replace('_gt', '')} > ${value}`);
+            return;
+          }
+          if (key.endsWith('_lt')) {
+            whereParts.push(`${key.replace('_lt', '')} < ${value}`);
+            return;
+          }
+          if (key.endsWith('_gte')) {
+            whereParts.push(`${key.replace('_gte', '')} >= ${value}`);
+            return;
+          }
+          if (key.endsWith('_lte')) {
+            whereParts.push(`${key.replace('_lte', '')} <= ${value}`);
+            return;
+          }
+          if (key.endsWith('_in') && Array.isArray(value)) {
+            const vals = value.map(v => typeof v === 'string' ? `'${String(v).replace(/'/g, "''")}'` : v).join(',');
+            whereParts.push(`${key.replace('_in', '')} IN (${vals})`);
+            return;
+          }
+
+          // Also handle arrays directly as IN clauses
+          if (Array.isArray(value)) {
+            const vals = value.map(v => typeof v === 'string' ? `'${String(v).replace(/'/g, "''")}'` : v).join(',');
+            whereParts.push(`${key} IN (${vals})`);
             return;
           }
 

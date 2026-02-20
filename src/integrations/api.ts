@@ -88,6 +88,11 @@ export class QueryBuilder {
     return this;
   }
 
+  neq(column: string, value: any) {
+    this.filters[`${column}_neq`] = value;
+    return this;
+  }
+
   in(column: string, values: any[]) {
     this.filters[`${column}_in`] = values;
     return this;
@@ -113,8 +118,23 @@ export class QueryBuilder {
     return this;
   }
 
+  is(column: string, value: any) {
+    this.filters[`${column}_is`] = value;
+    return this;
+  }
+
   like(column: string, pattern: string) {
     this.filters[`${column}_like`] = pattern;
+    return this;
+  }
+
+  ilike(column: string, pattern: string) {
+    this.filters[`${column}_ilike`] = pattern;
+    return this;
+  }
+
+  or(query: string) {
+    this.filters[`_or`] = query;
     return this;
   }
 
@@ -252,8 +272,48 @@ class QueryChain {
     return this;
   }
 
+  neq(column: string, value: any) {
+    this.filters[`${column}_neq`] = value;
+    return this;
+  }
+
   in(column: string, values: any[]) {
     this.inFilters[column] = values;
+    return this;
+  }
+
+  or(query: string) {
+    this.filters._or = query;
+    return this;
+  }
+
+  ilike(column: string, pattern: string) {
+    this.filters[`${column}_ilike`] = pattern;
+    return this;
+  }
+
+  is(column: string, value: any) {
+    this.filters[`${column}_is`] = value;
+    return this;
+  }
+
+  gt(column: string, value: any) {
+    this.filters[`${column}_gt`] = value;
+    return this;
+  }
+
+  lt(column: string, value: any) {
+    this.filters[`${column}_lt`] = value;
+    return this;
+  }
+
+  gte(column: string, value: any) {
+    this.filters[`${column}_gte`] = value;
+    return this;
+  }
+
+  lte(column: string, value: any) {
+    this.filters[`${column}_lte`] = value;
     return this;
   }
 
@@ -320,8 +380,40 @@ const createChainableQuery = (chain: QueryChain) => {
       chain.eq(column, value);
       return createChainableQuery(chain);
     },
+    neq: (column: string, value: any) => {
+      chain.neq(column, value);
+      return createChainableQuery(chain);
+    },
     in: (column: string, values: any[]) => {
       chain.in(column, values);
+      return createChainableQuery(chain);
+    },
+    or: (query: string) => {
+      chain.or(query);
+      return createChainableQuery(chain);
+    },
+    ilike: (column: string, pattern: string) => {
+      chain.ilike(column, pattern);
+      return createChainableQuery(chain);
+    },
+    is: (column: string, value: any) => {
+      chain.is(column, value);
+      return createChainableQuery(chain);
+    },
+    gt: (column: string, value: any) => {
+      chain.gt(column, value);
+      return createChainableQuery(chain);
+    },
+    lt: (column: string, value: any) => {
+      chain.lt(column, value);
+      return createChainableQuery(chain);
+    },
+    gte: (column: string, value: any) => {
+      chain.gte(column, value);
+      return createChainableQuery(chain);
+    },
+    lte: (column: string, value: any) => {
+      chain.lte(column, value);
       return createChainableQuery(chain);
     },
     order: (column: string, opts?: any) => {

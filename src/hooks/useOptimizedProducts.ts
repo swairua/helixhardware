@@ -44,6 +44,7 @@ export const useOptimizedProductSearch = (companyId?: string, enabled: boolean =
             name,
             product_code,
             unit_of_measure,
+            unit_price,
             selling_price,
             stock_quantity,
             category_id
@@ -155,6 +156,7 @@ export const usePopularProducts = (companyId?: string, limit: number = 20) => {
             name,
             product_code,
             unit_of_measure,
+            unit_price,
             selling_price,
             stock_quantity,
             category_id
@@ -237,6 +239,7 @@ export const useProductById = (productId?: string) => {
             product_code,
             unit_of_measure,
             unit_price,
+            selling_price,
             stock_quantity,
             category_id,
             company_id

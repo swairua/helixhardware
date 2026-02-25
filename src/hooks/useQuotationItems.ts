@@ -112,6 +112,17 @@ export const useRestockProduct = () => {
       if (movementSelectResult.error) throw movementSelectResult.error;
       if (!movementSelectResult.data) throw new Error('Failed to fetch created stock movement');
 
+      // 2. Update product stock quantity
+      // First get current stock to be sure (though we usually have it in UI)
+      const { data: product } = await db.selectOne('products', productId);
+      if (product) {
+        const newStock = (product.stock_quantity || 0) + quantity;
+        await db.update('products', productId, {
+          stock_quantity: newStock,
+          updated_at: new Date().toISOString()
+        });
+      }
+
       return movementSelectResult.data;
     },
     onSuccess: () => {

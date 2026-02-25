@@ -354,7 +354,7 @@ export default function Inventory() {
           </p>
         </div>
         <div className="flex items-center space-x-3">
-          <Button variant="outline" onClick={handleStockAdjustment} disabled={!canEdit('inventory')}>
+          <Button variant="outline" onClick={() => handleStockAdjustment()} disabled={!canEdit('inventory')}>
             <Package className="h-4 w-4 mr-2" />
             Stock Adjustment
           </Button>
@@ -510,6 +510,15 @@ export default function Inventory() {
                           disabled={!canEdit('inventory')}
                         >
                           <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleStockAdjustment(item)}
+                          title="Stock Adjustment"
+                          disabled={!canEdit('inventory')}
+                        >
+                          <TrendingUp className="h-4 w-4 text-primary" />
                         </Button>
                         {item.status === 'low_stock' && (
                           <Button

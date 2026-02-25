@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { 
+import {
   Package,
   Barcode,
   DollarSign,
@@ -18,8 +18,15 @@ import {
   Edit,
   AlertTriangle,
   TrendingUp,
-  Calendar
+  TrendingDown,
+  Calendar,
+  History,
+  ArrowRight,
+  Info,
+  Activity
 } from 'lucide-react';
+import { useProductMovements, useProductAuditLogs } from '@/hooks/useDatabase';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface InventoryItem {
   id: string;
@@ -60,6 +67,9 @@ interface ViewInventoryItemModalProps {
 }
 
 export function ViewInventoryItemModal({ open, onOpenChange, item, onEdit, onRestock }: ViewInventoryItemModalProps) {
+  const { data: movements = [], isLoading: isLoadingMovements } = useProductMovements(item?.id || '');
+  const { data: auditLogs = [], isLoading: isLoadingAudit } = useProductAuditLogs(item?.id || '');
+
   if (!item) return null;
 
   // Normalize field names from different sources
@@ -324,6 +334,77 @@ export function ViewInventoryItemModal({ open, onOpenChange, item, onEdit, onRes
                 <div className="text-sm text-muted-foreground">Reserved Stock</div>
               </div>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Stock Movement History (Audit) */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="flex items-center space-x-2">
+              <History className="h-4 w-4" />
+              <span>Stock Movement Audit</span>
+            </CardTitle>
+            <Badge variant="secondary">{movements?.length || 0} Records</Badge>
+          </CardHeader>
+          <CardContent>
+            {isLoadingMovements ? (
+              <div className="flex justify-center p-4">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : movements && movements.length > 0 ? (
+              <div className="space-y-4 max-h-64 overflow-y-auto pr-2">
+                {movements
+                  .sort((a: any, b: any) => new Date(b.created_at || b.movement_date).getTime() - new Date(a.created_at || a.movement_date).getTime())
+                  .map((m: any) => (
+                    <div key={m.id} className="flex items-start justify-between p-3 border rounded-lg bg-muted/30">
+                      <div className="flex items-start space-x-3">
+                        <div className={`p-2 rounded-full ${
+                          m.movement_type === 'IN' ? 'bg-success/10 text-success' :
+                          m.movement_type === 'OUT' ? 'bg-destructive/10 text-destructive' :
+                          'bg-warning/10 text-warning'
+                        }`}>
+                          {m.movement_type === 'IN' ? <TrendingUp className="h-4 w-4" /> :
+                           m.movement_type === 'OUT' ? <TrendingDown className="h-4 w-4" /> :
+                           <Package className="h-4 w-4" />}
+                        </div>
+                        <div>
+                          <div className="font-medium flex items-center space-x-2">
+                            <span>{m.movement_type} {m.quantity} {normalizedItem.unitOfMeasure}</span>
+                            {m.reference_type && (
+                              <Badge variant="outline" className="text-[10px] px-1 h-4">
+                                {m.reference_type}
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-0.5">
+                            {m.notes || 'No notes provided'}
+                          </div>
+                          <div className="text-[10px] text-muted-foreground mt-1 flex items-center">
+                            <Calendar className="h-3 w-3 mr-1" />
+                            {new Date(m.created_at || m.movement_date).toLocaleString()}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-sm font-semibold">
+                          {m.movement_type === 'IN' ? '+' : ''}{m.quantity}
+                        </div>
+                        {m.cost_per_unit && (
+                          <div className="text-[10px] text-muted-foreground">
+                            {formatCurrency(m.cost_per_unit)} / unit
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            ) : (
+              <div className="text-center p-8 bg-muted/20 rounded-lg border-2 border-dashed">
+                <Package className="h-8 w-8 text-muted-foreground mx-auto mb-2 opacity-50" />
+                <p className="text-sm text-muted-foreground font-medium">No movement history available</p>
+                <p className="text-xs text-muted-foreground mt-1">Movements will appear here once they are recorded.</p>
+              </div>
+            )}
           </CardContent>
         </Card>
 

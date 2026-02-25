@@ -196,6 +196,21 @@ export function AddInventoryItemModal({ open, onOpenChange, onSuccess }: AddInve
 
       const createdProduct = await createProduct.mutateAsync(newProduct);
 
+      // If initial stock > 0, record a stock movement
+      if (Number(formData.stock_quantity) > 0 && createdProduct?.id) {
+        const movementData = {
+          company_id: currentCompany.id,
+          product_id: createdProduct.id,
+          movement_type: 'IN',
+          reference_type: 'ADJUSTMENT',
+          quantity: Number(formData.stock_quantity),
+          notes: 'Initial stock recorded during product creation',
+          movement_date: new Date().toISOString().split('T')[0]
+        };
+
+        await db.insert('stock_movements', movementData);
+      }
+
       toast.success(`Product "${formData.name}" added successfully!`);
       onSuccess(createdProduct);
       onOpenChange(false);

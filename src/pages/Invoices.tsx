@@ -263,10 +263,15 @@ export default function Invoices() {
       const fullInvoice = {
         ...invoiceData,
         customers: customerResult.data,
-        invoice_items: (itemsResult.data || []).map((item: any) => ({
-          ...item,
-          products: { name: item.product_name }
-        }))
+        invoice_items: (itemsResult.data || []).map((item: any) => {
+          // Ensure product_name is preserved and also available via products object
+          // This handles cases where the database join relationship is missing
+          return {
+            ...item,
+            product_name: item.product_name || 'Unknown Product', // Ensure product_name exists
+            products: { name: item.product_name || 'Unknown Product' } // Also provide via products for compatibility
+          };
+        })
       };
 
       // DEBUG: Log the response

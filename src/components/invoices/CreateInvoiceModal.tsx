@@ -490,6 +490,7 @@ export function CreateInvoiceModal({ open, onOpenChange, onSuccess, preSelectedC
 
         const invoiceItems = items.map(item => ({
           product_id: item.product_id,
+          product_name: item.product_name, // Store as snapshot for data integrity
           description: item.description,
           quantity: item.quantity,
           unit_price: item.unit_price,

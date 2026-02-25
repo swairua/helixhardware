@@ -411,6 +411,93 @@ export function useUpdateProduct() {
 }
 
 /**
+ * Hook to adjust stock levels manually
+ */
+export function useStockAdjustment() {
+  const queryClient = useQueryClient();
+  const { db } = useDatabase();
+
+  return useMutation({
+    mutationFn: async ({
+      productId,
+      companyId,
+      adjustmentType,
+      oldQuantity,
+      adjustmentQuantity,
+      newQuantity,
+      reason,
+      notes,
+      costImpact
+    }: {
+      productId: string;
+      companyId: string;
+      adjustmentType: 'increase' | 'decrease' | 'set';
+      oldQuantity: number;
+      adjustmentQuantity: number;
+      newQuantity: number;
+      reason: string;
+      notes?: string;
+      costImpact?: number;
+    }) => {
+      // 1. Create stock movement record
+      const movementData = {
+        company_id: companyId,
+        product_id: productId,
+        movement_type: adjustmentType === 'increase' ? 'IN' : adjustmentType === 'decrease' ? 'OUT' : 'ADJUSTMENT',
+        reference_type: 'ADJUSTMENT',
+        quantity: adjustmentType === 'decrease' ? -adjustmentQuantity : adjustmentQuantity,
+        cost_per_unit: costImpact ? Math.abs(costImpact / adjustmentQuantity) : 0,
+        notes: `${reason}${notes ? `: ${notes}` : ''}`,
+        movement_date: new Date().toISOString().split('T')[0]
+      };
+
+      const movementResult = await db.insert('stock_movements', movementData);
+      if (movementResult.error) throw movementResult.error;
+
+      // 2. Update product stock quantity
+      const productResult = await db.update('products', productId, {
+        stock_quantity: newQuantity,
+        updated_at: new Date().toISOString()
+      });
+      if (productResult.error) throw productResult.error;
+
+      return { movementResult, productResult };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ['stock_movements'] });
+      toast.success('Stock adjusted successfully!');
+    },
+    onError: (error: any) => {
+      console.error('Error adjusting stock:', error);
+      const message = error?.message || 'Failed to adjust stock';
+      toast.error(message);
+    },
+  });
+}
+
+/**
+ * Hook to get stock movements for a specific product
+ * @param productId - ID of the product
+ */
+export function useProductMovements(productId: string) {
+  const filter = useMemo(() => ({ product_id: productId }), [productId]);
+  return useSelect('stock_movements', filter);
+}
+
+/**
+ * Hook to get audit logs for a specific product
+ * @param productId - ID of the product
+ */
+export function useProductAuditLogs(productId: string) {
+  const filter = useMemo(() => ({
+    entity_type: 'products',
+    record_id: productId
+  }), [productId]);
+  return useSelect('audit_logs', filter);
+}
+
+/**
  * Hook to get units of measure
  * Units of measure are system-wide, not company-specific
  */

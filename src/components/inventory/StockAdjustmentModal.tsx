@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -21,11 +21,13 @@ import {
 import { toast } from 'sonner';
 import { TrendingUp, TrendingDown, RotateCcw, Calculator } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useStockAdjustment, useCompanies } from '@/hooks/useDatabase';
 
 interface InventoryItem {
-  id?: string;
+  id: string; // ID should be required
   name: string;
   product_code: string;
+  sku?: string; // Standardize field names
   stock_quantity: number;
   unit_of_measure: string;
   cost_price: number;
@@ -45,8 +47,25 @@ export function StockAdjustmentModal({ open, onOpenChange, onSuccess, item }: St
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const stockAdjustmentMutation = useStockAdjustment();
+  const { data: companies } = useCompanies();
+  const currentCompany = companies?.[0];
+
+  useEffect(() => {
+    if (open) {
+      // Reset form when modal opens
+      setAdjustmentType('increase');
+      setQuantity('');
+      setReason(undefined);
+      setNotes('');
+    }
+  }, [open]);
+
   const handleSubmit = async () => {
-    if (!item) return;
+    if (!item || !currentCompany?.id) {
+      toast.error('Missing required information to perform adjustment');
+      return;
+    }
 
     if (Number(quantity) <= 0 && adjustmentType !== 'set') {
       toast.error('Quantity must be greater than 0');
@@ -69,7 +88,7 @@ export function StockAdjustmentModal({ open, onOpenChange, onSuccess, item }: St
     }
 
     setIsSubmitting(true);
-    
+
     try {
       // Calculate new stock quantity
       let newQuantity: number;
@@ -87,38 +106,28 @@ export function StockAdjustmentModal({ open, onOpenChange, onSuccess, item }: St
           newQuantity = item.stock_quantity;
       }
 
-      // TODO: Implement actual stock adjustment API call
-      // For now, simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const adjustmentData = {
-        item_id: item.id,
-        product_code: item.product_code,
-        adjustment_type: adjustmentType,
-        old_quantity: item.stock_quantity,
-        adjustment_quantity: adjustmentType === 'set' ? Number(quantity) : Number(quantity),
-        new_quantity: newQuantity,
+      const costImpact = adjustmentType === 'increase' ? Number(quantity) * (item.cost_price || 0) :
+                        adjustmentType === 'decrease' ? -Number(quantity) * (item.cost_price || 0) :
+                        (Number(quantity) - item.stock_quantity) * (item.cost_price || 0);
+
+      await stockAdjustmentMutation.mutateAsync({
+        productId: item.id,
+        companyId: currentCompany.id,
+        adjustmentType,
+        oldQuantity: item.stock_quantity,
+        adjustmentQuantity: Number(quantity),
+        newQuantity,
         reason,
         notes,
-        cost_impact: adjustmentType === 'increase' ? Number(quantity) * item.cost_price :
-                    adjustmentType === 'decrease' ? -Number(quantity) * item.cost_price :
-                    (Number(quantity) - item.stock_quantity) * item.cost_price,
-        adjustment_date: new Date().toISOString(),
-      };
+        costImpact
+      });
 
-      console.log('Stock adjustment data:', adjustmentData);
-      
-      const actionText = adjustmentType === 'increase' ? 'increased by' : 
-                        adjustmentType === 'decrease' ? 'decreased by' : 
-                        'set to';
-      
-      toast.success(`Stock for ${item.name} ${actionText} ${quantity} ${item.unit_of_measure}`);
       onSuccess();
       handleClose();
-      
+
     } catch (error) {
       console.error('Error adjusting stock:', error);
-      toast.error('Failed to adjust stock. Please try again.');
+      // Hook handles toast error
     } finally {
       setIsSubmitting(false);
     }

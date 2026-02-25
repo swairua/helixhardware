@@ -213,8 +213,29 @@ export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: 
     setIsSubmitting(true);
 
     try {
+      // 1. Check if stock quantity has changed to record a movement
+      const oldStock = Number(item?.stock_quantity || 0);
+      const newStock = Number(formData.stock_quantity || 0);
 
-      // Build update data with fields appropriate for the database provider
+      if (oldStock !== newStock && currentCompany?.id) {
+        const movementData = {
+          company_id: currentCompany.id,
+          product_id: productId,
+          movement_type: newStock > oldStock ? 'IN' : 'OUT',
+          reference_type: 'ADJUSTMENT',
+          quantity: newStock - oldStock,
+          notes: `Stock updated during product edit (Manual Adjustment)`,
+          movement_date: new Date().toISOString().split('T')[0]
+        };
+
+        const { error: movementError } = await db.insert('stock_movements', movementData);
+        if (movementError) {
+          console.error('Error recording stock movement:', movementError);
+          // We continue anyway, but log it
+        }
+      }
+
+      // 2. Build update data with fields appropriate for the database provider
       const baseData = {
         name: formData.name,
         description: formData.description,

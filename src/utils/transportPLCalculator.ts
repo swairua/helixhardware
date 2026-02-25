@@ -25,10 +25,16 @@ export interface TransportExpense {
 export interface TransportFinance {
   id: string;
   date: string;
-  selling_price: number;
+  buying_price?: number;
+  fuel_cost?: number;
   driver_fees: number;
   other_expenses: number;
+  selling_price: number;
   vehicle_id?: string;
+  material_id?: string;
+  materials?: string;
+  customer_name?: string;
+  payment_status?: string;
   route?: string;
 }
 
@@ -130,9 +136,13 @@ export const calculateTotalExpenses = (
   startDate?: Date,
   endDate?: Date
 ): number => {
-  const driverFees = calculateDriverFees(transports, startDate, endDate);
-  const otherExpenses = calculateOtherExpenses(transports, startDate, endDate);
-  return driverFees + otherExpenses;
+  return transports
+    .filter(t => {
+      if (!startDate || !endDate) return true;
+      const tDate = new Date(t.date);
+      return tDate >= startDate && tDate <= endDate;
+    })
+    .reduce((sum, t) => sum + (t.buying_price || 0) + (t.fuel_cost || 0) + (t.driver_fees || 0) + (t.other_expenses || 0), 0);
 };
 
 /**
@@ -205,7 +215,7 @@ export const calculateAverageExpensePerTrip = (
   if (filtered.length === 0) return 0;
 
   const totalExpenses = filtered.reduce(
-    (sum, t) => sum + (t.driver_fees || 0) + (t.other_expenses || 0),
+    (sum, t) => sum + (t.buying_price || 0) + (t.fuel_cost || 0) + (t.driver_fees || 0) + (t.other_expenses || 0),
     0
   );
   return totalExpenses / filtered.length;
@@ -280,7 +290,7 @@ export const calculateVehiclePerformance = (
       existing.tripCount += 1;
       existing.revenue += t.selling_price || 0;
       existing.driverFees += t.driver_fees || 0;
-      existing.otherExpenses += t.other_expenses || 0;
+      existing.otherExpenses += (t.buying_price || 0) + (t.fuel_cost || 0) + (t.other_expenses || 0);
       existing.totalExpenses = existing.driverFees + existing.otherExpenses;
       existing.operatingProfit = existing.revenue - existing.totalExpenses;
       existing.profitMarginPercentage =
@@ -289,7 +299,7 @@ export const calculateVehiclePerformance = (
     } else {
       const revenue = t.selling_price || 0;
       const driverFees = t.driver_fees || 0;
-      const otherExpenses = t.other_expenses || 0;
+      const otherExpenses = (t.buying_price || 0) + (t.fuel_cost || 0) + (t.other_expenses || 0);
       const totalExpenses = driverFees + otherExpenses;
       const operatingProfit = revenue - totalExpenses;
 

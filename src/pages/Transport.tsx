@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -200,11 +200,23 @@ export default function Transport({ initialTab = 'drivers' }: TransportProps) {
     material.description?.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
 
-  const filteredFinances = finances?.filter(finance =>
+  const enrichedFinances = useMemo(() => {
+    return finances?.map(finance => {
+      const vehicle = vehicles?.find(v => v.id === finance.vehicle_id);
+      const material = materials?.find(m => m.id === finance.material_id);
+      return {
+        ...finance,
+        vehicle_number: vehicle?.vehicle_number || finance.vehicle_number,
+        materials: material?.name || finance.materials
+      };
+    }) || [];
+  }, [finances, vehicles, materials]);
+
+  const filteredFinances = enrichedFinances.filter(finance =>
     finance.vehicle_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     finance.materials?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     finance.customer_name?.toLowerCase().includes(searchTerm.toLowerCase())
-  ) || [];
+  );
 
   // Get section title and description based on active tab
   const getSectionInfo = () => {

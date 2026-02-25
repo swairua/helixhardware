@@ -38,7 +38,7 @@ import {
 } from 'recharts';
 import { useCurrentCompanyId } from '@/contexts/CompanyContext';
 import { usePermissions } from '@/hooks/usePermissions';
-import { useTransportFinance } from '@/hooks/useTransport';
+import { useTransportFinance, useVehicles, useMaterials } from '@/hooks/useTransport';
 import { toast } from 'sonner';
 import {
   calculateTransportPLMetrics,
@@ -62,7 +62,21 @@ export default function TransportPLReport() {
   const { can: canViewReports, loading: permissionsLoading } = usePermissions();
 
   // Fetch transport finance data
-  const { data: transportData, isLoading: transportLoading } = useTransportFinance(companyId);
+  const { data: rawTransportData, isLoading: transportLoading } = useTransportFinance(companyId);
+  const { data: vehicles } = useVehicles(companyId);
+  const { data: materials } = useMaterials(companyId);
+
+  const transportData = useMemo(() => {
+    return rawTransportData?.map(t => {
+      const vehicle = vehicles?.find(v => v.id === t.vehicle_id);
+      const material = materials?.find(m => m.id === t.material_id);
+      return {
+        ...t,
+        vehicle_id: vehicle?.vehicle_number || t.vehicle_id,
+        materials: material?.name || t.materials
+      };
+    }) || [];
+  }, [rawTransportData, vehicles, materials]);
 
   console.log('[TransportPLReport] Component mounted/updated - companyId:', companyId, 'transport loading:', transportLoading, 'transport data count:', transportData?.length);
   console.log('[TransportPLReport] Transport data sample:', transportData?.slice(0, 2));
@@ -180,6 +194,13 @@ export default function TransportPLReport() {
     if (!metrics) return;
 
     const filteredTransports = getFilteredTransports();
+
+    // Simple formatter for CSV to avoid encoding issues with non-breaking spaces
+    const formatCSVValue = (value: number) => {
+      if (!isFinite(value)) return '0.00';
+      return value.toFixed(2);
+    };
+
     const headers = [
       'Date',
       'Vehicle ID',
@@ -197,12 +218,12 @@ export default function TransportPLReport() {
       new Date(t.date).toLocaleDateString(),
       t.vehicle_id || 'Unknown',
       t.materials || '-',
-      formatCurrency(t.buying_price || 0),
-      formatCurrency(t.fuel_cost || 0),
-      formatCurrency(t.driver_fees || 0),
-      formatCurrency(t.other_expenses || 0),
-      formatCurrency(t.selling_price || 0),
-      formatCurrency((t.selling_price || 0) - (t.buying_price || 0) - (t.fuel_cost || 0) - (t.driver_fees || 0) - (t.other_expenses || 0)),
+      formatCSVValue(t.buying_price || 0),
+      formatCSVValue(t.fuel_cost || 0),
+      formatCSVValue(t.driver_fees || 0),
+      formatCSVValue(t.other_expenses || 0),
+      formatCSVValue(t.selling_price || 0),
+      formatCSVValue((t.selling_price || 0) - ((t.buying_price || 0) + (t.fuel_cost || 0) + (t.driver_fees || 0) + (t.other_expenses || 0))),
       t.payment_status || '-',
       t.customer_name || '-'
     ]);
@@ -210,7 +231,9 @@ export default function TransportPLReport() {
     const csvContent = [headers, ...rows]
       .map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(','))
       .join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+
+    // Use BOM for UTF-8 to help Excel
+    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;

@@ -104,20 +104,36 @@ export function EditInvoiceModal({ open, onOpenChange, onSuccess, invoice }: Edi
       setNotes(invoice.notes || '');
 
       // Convert invoice items to local format
-      const invoiceItems = (invoice.invoice_items || []).map((item: any, index: number) => ({
-        id: item.id || `existing-${index}`,
-        product_id: item.product_id || '',
-        product_name: item.product_name || item.products?.name || 'Unknown Product',
-        description: item.description || '',
-        quantity: Number.isFinite(item.quantity) ? item.quantity : 0,
-        unit_price: Number.isFinite(item.unit_price) ? item.unit_price : 0,
-        discount_percentage: Number.isFinite(item.discount_percentage) ? item.discount_percentage : 0,
-        discount_before_vat: Number.isFinite(item.discount_before_vat) ? item.discount_before_vat : 0,
-        tax_percentage: 0,
-        tax_amount: 0,
-        tax_inclusive: false,
-        line_total: Number.isFinite(item.line_total) ? item.line_total : 0,
-      }));
+      const invoiceItems = (invoice.invoice_items || []).map((item: any, index: number) => {
+        const qty = Number.isFinite(Number(item.quantity)) ? Number(item.quantity) : 0;
+        const price = Number.isFinite(Number(item.unit_price)) ? Number(item.unit_price) : 0;
+        const discount = Number.isFinite(Number(item.discount_percentage)) ? Number(item.discount_percentage) : 0;
+        const tax = Number.isFinite(Number(item.tax_percentage)) ? Number(item.tax_percentage) : 0;
+        const inclusive = item.tax_inclusive === true || item.tax_inclusive === 1 || item.tax_inclusive === '1';
+
+        // Try to find product name from the loaded products list if missing
+        let name = item.product_name || item.products?.name;
+        if ((!name || name === 'Unknown Product') && item.product_id && products) {
+          const product = products.find(p => String(p.id) === String(item.product_id));
+          if (product) name = product.name;
+        }
+        if (!name) name = 'Unknown Product';
+
+        return {
+          id: item.id || `existing-${index}`,
+          product_id: item.product_id || '',
+          product_name: name,
+          description: item.description || '',
+          quantity: qty,
+          unit_price: price,
+          discount_percentage: discount,
+          discount_before_vat: Number.isFinite(Number(item.discount_before_vat)) ? Number(item.discount_before_vat) : 0,
+          tax_percentage: tax,
+          tax_amount: Number.isFinite(Number(item.tax_amount)) ? Number(item.tax_amount) : 0,
+          tax_inclusive: inclusive,
+          line_total: Number.isFinite(Number(item.line_total)) ? Number(item.line_total) : (qty * price),
+        };
+      });
 
       // DEBUG: Log after mapping
       console.log('📋 EditInvoiceModal - Mapped items:', {
@@ -164,20 +180,36 @@ export function EditInvoiceModal({ open, onOpenChange, onSuccess, invoice }: Edi
             });
 
             // Map the fetched items to local format
-            const mappedItems: InvoiceItem[] = items.map((item: any, index: number) => ({
-              id: item.id,
-              product_id: item.product_id || '',
-              product_name: item.product_name || item.products?.name || 'Unknown Product',
-              description: item.description || '',
-              quantity: Number.isFinite(item.quantity) ? item.quantity : 0,
-              unit_price: Number.isFinite(item.unit_price) ? item.unit_price : 0,
-              discount_percentage: Number.isFinite(item.discount_percentage) ? item.discount_percentage : 0,
-              discount_before_vat: Number.isFinite(item.discount_before_vat) ? item.discount_before_vat : 0,
-              tax_percentage: 0,
-              tax_amount: 0,
-              tax_inclusive: false,
-              line_total: Number.isFinite(item.line_total) ? item.line_total : 0,
-            }));
+            const mappedItems: InvoiceItem[] = items.map((item: any, index: number) => {
+              const qty = Number.isFinite(Number(item.quantity)) ? Number(item.quantity) : 0;
+              const price = Number.isFinite(Number(item.unit_price)) ? Number(item.unit_price) : 0;
+              const discount = Number.isFinite(Number(item.discount_percentage)) ? Number(item.discount_percentage) : 0;
+              const tax = Number.isFinite(Number(item.tax_percentage)) ? Number(item.tax_percentage) : 0;
+              const inclusive = item.tax_inclusive === true || item.tax_inclusive === 1 || item.tax_inclusive === '1';
+
+              // Try to find product name from the loaded products list if missing
+              let name = item.product_name || item.products?.name;
+              if ((!name || name === 'Unknown Product') && item.product_id && products) {
+                const product = products.find(p => String(p.id) === String(item.product_id));
+                if (product) name = product.name;
+              }
+              if (!name) name = 'Unknown Product';
+
+              return {
+                id: item.id,
+                product_id: item.product_id || '',
+                product_name: name,
+                description: item.description || '',
+                quantity: qty,
+                unit_price: price,
+                discount_percentage: discount,
+                discount_before_vat: Number.isFinite(Number(item.discount_before_vat)) ? Number(item.discount_before_vat) : 0,
+                tax_percentage: tax,
+                tax_amount: Number.isFinite(Number(item.tax_amount)) ? Number(item.tax_amount) : 0,
+                tax_inclusive: inclusive,
+                line_total: Number.isFinite(Number(item.line_total)) ? Number(item.line_total) : (qty * price),
+              };
+            });
 
             setItems(mappedItems);
           } else {
@@ -366,6 +398,48 @@ export function EditInvoiceModal({ open, onOpenChange, onSuccess, invoice }: Edi
   const totalAmount = items.reduce((sum, item) => sum + item.line_total, 0);
   const balanceDue = totalAmount - (invoice?.paid_amount || 0);
 
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'draft':
+        return 'bg-muted text-muted-foreground border-muted-foreground/20';
+      case 'sent':
+        return 'bg-warning-light text-warning border-warning/20';
+      case 'paid':
+        return 'bg-success-light text-success border-success/20';
+      case 'partial':
+        return 'bg-primary-light text-primary border-primary/20';
+      case 'overdue':
+        return 'bg-destructive-light text-destructive border-destructive/20';
+      default:
+        return 'bg-muted text-muted-foreground border-muted-foreground/20';
+    }
+  };
+
+  const calculateActualStatus = (invoice: any): string => {
+    if (!invoice) return 'draft';
+    const tolerance = 0.01;
+    // Use the current total and balance calculated in the modal
+    const currentTotal = totalAmount;
+    const currentPaid = invoice.paid_amount || 0;
+    const currentBalance = currentTotal - currentPaid;
+
+    const balanceDue = Math.abs(currentBalance) < tolerance ? 0 : currentBalance;
+
+    if (balanceDue <= 0 && currentPaid > 0) {
+      return 'paid';
+    }
+    if (currentPaid > 0 && balanceDue > 0) {
+      return 'partial';
+    }
+    if (invoice.status === 'overdue') {
+      return 'overdue';
+    }
+    if (invoice.status === 'sent') {
+      return 'sent';
+    }
+    return 'draft';
+  };
+
   const handleSubmit = async () => {
     if (!selectedCustomerId) {
       toast.error('Please select a customer');
@@ -430,9 +504,9 @@ export function EditInvoiceModal({ open, onOpenChange, onSuccess, invoice }: Edi
         unit_price: item.unit_price,
         discount_percentage: item.discount_percentage,
         discount_before_vat: item.discount_before_vat || 0,
-        tax_percentage: 0,
-        tax_amount: 0,
-        tax_inclusive: false,
+        tax_percentage: item.tax_percentage || 0,
+        tax_amount: item.tax_amount || 0,
+        tax_inclusive: item.tax_inclusive || false,
         line_total: item.line_total
       }));
 
@@ -457,9 +531,19 @@ export function EditInvoiceModal({ open, onOpenChange, onSuccess, invoice }: Edi
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center space-x-2">
-            <Receipt className="h-5 w-5 text-primary" />
-            <span>Edit Invoice {invoice?.invoice_number}</span>
+          <DialogTitle className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Receipt className="h-5 w-5 text-primary" />
+              <span>Edit Invoice {invoice?.invoice_number}</span>
+              {(() => {
+                const actualStatus = calculateActualStatus(invoice);
+                return (
+                  <Badge variant="outline" className={getStatusColor(actualStatus)}>
+                    {actualStatus.charAt(0).toUpperCase() + actualStatus.slice(1)}
+                  </Badge>
+                );
+              })()}
+            </div>
           </DialogTitle>
           <DialogDescription>
             Update invoice details and items

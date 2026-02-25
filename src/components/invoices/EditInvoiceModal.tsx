@@ -107,7 +107,7 @@ export function EditInvoiceModal({ open, onOpenChange, onSuccess, invoice }: Edi
       const invoiceItems = (invoice.invoice_items || []).map((item: any, index: number) => ({
         id: item.id || `existing-${index}`,
         product_id: item.product_id || '',
-        product_name: item.products?.name || 'Unknown Product',
+        product_name: item.product_name || item.products?.name || 'Unknown Product',
         description: item.description || '',
         quantity: Number.isFinite(item.quantity) ? item.quantity : 0,
         unit_price: Number.isFinite(item.unit_price) ? item.unit_price : 0,
@@ -167,7 +167,7 @@ export function EditInvoiceModal({ open, onOpenChange, onSuccess, invoice }: Edi
             const mappedItems: InvoiceItem[] = items.map((item: any, index: number) => ({
               id: item.id,
               product_id: item.product_id || '',
-              product_name: item.product_name || 'Unknown Product',
+              product_name: item.product_name || item.products?.name || 'Unknown Product',
               description: item.description || '',
               quantity: Number.isFinite(item.quantity) ? item.quantity : 0,
               unit_price: Number.isFinite(item.unit_price) ? item.unit_price : 0,
@@ -377,6 +377,28 @@ export function EditInvoiceModal({ open, onOpenChange, onSuccess, invoice }: Edi
       return;
     }
 
+    // Validate items have valid quantities and prices
+    const invalidItems = items.filter(item => item.quantity <= 0 || item.unit_price <= 0);
+    if (invalidItems.length > 0) {
+      const itemNames = invalidItems.map(item => `"${item.product_name}"`).join(', ');
+      toast.error(`Invalid items detected: ${itemNames} have zero or negative quantity/price. Please fix these items before saving.`);
+      return;
+    }
+
+    // Detect duplicate product IDs
+    const productIds = items
+      .filter(item => item.product_id) // Only check items with product_id
+      .map(item => item.product_id);
+    const duplicateIds = productIds.filter((id, index) => productIds.indexOf(id) !== index);
+    if (duplicateIds.length > 0) {
+      const duplicateProducts = items
+        .filter(item => duplicateIds.includes(item.product_id))
+        .map(item => `"${item.product_name}"`)
+        .filter((name, index, arr) => arr.indexOf(name) === index)
+        .join(', ');
+      toast.warning(`Duplicate products detected: ${duplicateProducts}. Make sure this is intentional.`);
+    }
+
     setIsSubmitting(true);
     try {
       // Log the selected customer for debugging
@@ -402,6 +424,7 @@ export function EditInvoiceModal({ open, onOpenChange, onSuccess, invoice }: Edi
 
       const invoiceItems = items.map(item => ({
         product_id: item.product_id,
+        product_name: item.product_name, // Store as snapshot for data integrity
         description: item.description,
         quantity: item.quantity,
         unit_price: item.unit_price,
@@ -611,7 +634,47 @@ export function EditInvoiceModal({ open, onOpenChange, onSuccess, invoice }: Edi
                 No items added yet. Search and select products to add them.
               </div>
             ) : (
-              <Table>
+              <>
+                {/* Warning for invalid items */}
+                {(() => {
+                  const invalidItems = items.filter(item => item.quantity <= 0 || item.unit_price <= 0);
+                  if (invalidItems.length > 0) {
+                    return (
+                      <div className="mb-4 p-4 bg-destructive/10 border border-destructive/30 rounded-lg">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <h4 className="font-semibold text-destructive mb-2">Invalid Items Detected</h4>
+                            <p className="text-sm text-destructive/80 mb-3">
+                              The following items have invalid data and must be fixed or removed before saving:
+                            </p>
+                            <ul className="text-sm text-destructive/80 space-y-1 mb-3">
+                              {invalidItems.map(item => (
+                                <li key={item.id}>
+                                  • <strong>{item.product_name}</strong>
+                                  {item.quantity <= 0 && <span> (Qty: {item.quantity})</span>}
+                                  {item.unit_price <= 0 && <span> (Price: {item.unit_price})</span>}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setItems(items.filter(item => item.quantity > 0 && item.unit_price > 0));
+                              toast.success(`Removed ${invalidItems.length} invalid item${invalidItems.length !== 1 ? 's' : ''}`);
+                            }}
+                            className="text-destructive border-destructive/30 hover:bg-destructive/10 whitespace-nowrap ml-4"
+                          >
+                            Remove Invalid Items
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
+                <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Product</TableHead>
@@ -691,6 +754,7 @@ export function EditInvoiceModal({ open, onOpenChange, onSuccess, invoice }: Edi
                   ))}
                 </TableBody>
               </Table>
+              </>
             )}
 
             {/* Totals */}

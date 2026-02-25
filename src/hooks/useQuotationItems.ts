@@ -21,6 +21,7 @@ export interface QuotationItem {
 export interface InvoiceItem {
   invoice_id: string;
   product_id?: string;
+  product_name?: string; // Store product name as snapshot for data integrity
   description: string;
   quantity: number;
   unit_price: number;

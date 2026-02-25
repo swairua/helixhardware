@@ -107,7 +107,7 @@ export function EditInvoiceModal({ open, onOpenChange, onSuccess, invoice }: Edi
       const invoiceItems = (invoice.invoice_items || []).map((item: any, index: number) => ({
         id: item.id || `existing-${index}`,
         product_id: item.product_id || '',
-        product_name: item.products?.name || 'Unknown Product',
+        product_name: item.product_name || item.products?.name || 'Unknown Product',
         description: item.description || '',
         quantity: Number.isFinite(item.quantity) ? item.quantity : 0,
         unit_price: Number.isFinite(item.unit_price) ? item.unit_price : 0,
@@ -167,7 +167,7 @@ export function EditInvoiceModal({ open, onOpenChange, onSuccess, invoice }: Edi
             const mappedItems: InvoiceItem[] = items.map((item: any, index: number) => ({
               id: item.id,
               product_id: item.product_id || '',
-              product_name: item.product_name || 'Unknown Product',
+              product_name: item.product_name || item.products?.name || 'Unknown Product',
               description: item.description || '',
               quantity: Number.isFinite(item.quantity) ? item.quantity : 0,
               unit_price: Number.isFinite(item.unit_price) ? item.unit_price : 0,
@@ -375,6 +375,28 @@ export function EditInvoiceModal({ open, onOpenChange, onSuccess, invoice }: Edi
     if (items.length === 0) {
       toast.error('Please add at least one item');
       return;
+    }
+
+    // Validate items have valid quantities and prices
+    const invalidItems = items.filter(item => item.quantity <= 0 || item.unit_price <= 0);
+    if (invalidItems.length > 0) {
+      const itemNames = invalidItems.map(item => `"${item.product_name}"`).join(', ');
+      toast.error(`Invalid items detected: ${itemNames} have zero or negative quantity/price. Please fix these items before saving.`);
+      return;
+    }
+
+    // Detect duplicate product IDs
+    const productIds = items
+      .filter(item => item.product_id) // Only check items with product_id
+      .map(item => item.product_id);
+    const duplicateIds = productIds.filter((id, index) => productIds.indexOf(id) !== index);
+    if (duplicateIds.length > 0) {
+      const duplicateProducts = items
+        .filter(item => duplicateIds.includes(item.product_id))
+        .map(item => `"${item.product_name}"`)
+        .filter((name, index, arr) => arr.indexOf(name) === index)
+        .join(', ');
+      toast.warning(`Duplicate products detected: ${duplicateProducts}. Make sure this is intentional.`);
     }
 
     setIsSubmitting(true);

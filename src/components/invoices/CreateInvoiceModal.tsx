@@ -324,6 +324,28 @@ export function CreateInvoiceModal({ open, onOpenChange, onSuccess, preSelectedC
       return;
     }
 
+    // Validate items have valid quantities and prices
+    const invalidItems = items.filter(item => item.quantity <= 0 || item.unit_price <= 0);
+    if (invalidItems.length > 0) {
+      const itemNames = invalidItems.map(item => `"${item.product_name}"`).join(', ');
+      toast.error(`Invalid items detected: ${itemNames} have zero or negative quantity/price. Please fix these items before saving.`);
+      return;
+    }
+
+    // Detect duplicate product IDs
+    const productIds = items
+      .filter(item => item.product_id) // Only check items with product_id
+      .map(item => item.product_id);
+    const duplicateIds = productIds.filter((id, index) => productIds.indexOf(id) !== index);
+    if (duplicateIds.length > 0) {
+      const duplicateProducts = items
+        .filter(item => duplicateIds.includes(item.product_id))
+        .map(item => `"${item.product_name}"`)
+        .filter((name, index, arr) => arr.indexOf(name) === index)
+        .join(', ');
+      toast.warning(`Duplicate products detected: ${duplicateProducts}. Make sure this is intentional.`);
+    }
+
     // Validate invoice total amount (prevent zero-amount invoices)
     if (totalAmount <= 0) {
       toast.error('Invoice total must be greater than 0. Please add items or adjust prices.');

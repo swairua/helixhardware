@@ -109,14 +109,14 @@ export function EditInvoiceModal({ open, onOpenChange, onSuccess, invoice }: Edi
         product_id: item.product_id || '',
         product_name: item.products?.name || 'Unknown Product',
         description: item.description || '',
-        quantity: item.quantity || 0,
-        unit_price: item.unit_price || 0,
-        discount_percentage: item.discount_percentage || 0,
-        discount_before_vat: item.discount_before_vat || 0,
+        quantity: Number.isFinite(item.quantity) ? item.quantity : 0,
+        unit_price: Number.isFinite(item.unit_price) ? item.unit_price : 0,
+        discount_percentage: Number.isFinite(item.discount_percentage) ? item.discount_percentage : 0,
+        discount_before_vat: Number.isFinite(item.discount_before_vat) ? item.discount_before_vat : 0,
         tax_percentage: 0,
         tax_amount: 0,
         tax_inclusive: false,
-        line_total: item.line_total || 0,
+        line_total: Number.isFinite(item.line_total) ? item.line_total : 0,
       }));
 
       // DEBUG: Log after mapping
@@ -169,14 +169,14 @@ export function EditInvoiceModal({ open, onOpenChange, onSuccess, invoice }: Edi
               product_id: item.product_id || '',
               product_name: item.product_name || 'Unknown Product',
               description: item.description || '',
-              quantity: item.quantity || 0,
-              unit_price: item.unit_price || 0,
-              discount_percentage: item.discount_percentage || 0,
-              discount_before_vat: item.discount_before_vat || 0,
+              quantity: Number.isFinite(item.quantity) ? item.quantity : 0,
+              unit_price: Number.isFinite(item.unit_price) ? item.unit_price : 0,
+              discount_percentage: Number.isFinite(item.discount_percentage) ? item.discount_percentage : 0,
+              discount_before_vat: Number.isFinite(item.discount_before_vat) ? item.discount_before_vat : 0,
               tax_percentage: 0,
               tax_amount: 0,
               tax_inclusive: false,
-              line_total: item.line_total || 0,
+              line_total: Number.isFinite(item.line_total) ? item.line_total : 0,
             }));
 
             setItems(mappedItems);

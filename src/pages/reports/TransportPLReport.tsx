@@ -38,7 +38,7 @@ import {
 } from 'recharts';
 import { useCurrentCompanyId } from '@/contexts/CompanyContext';
 import { usePermissions } from '@/hooks/usePermissions';
-import { useTransportFinance } from '@/hooks/useTransport';
+import { useTransportFinance, useVehicles, useMaterials } from '@/hooks/useTransport';
 import { toast } from 'sonner';
 import {
   calculateTransportPLMetrics,
@@ -62,7 +62,21 @@ export default function TransportPLReport() {
   const { can: canViewReports, loading: permissionsLoading } = usePermissions();
 
   // Fetch transport finance data
-  const { data: transportData, isLoading: transportLoading } = useTransportFinance(companyId);
+  const { data: rawTransportData, isLoading: transportLoading } = useTransportFinance(companyId);
+  const { data: vehicles } = useVehicles(companyId);
+  const { data: materials } = useMaterials(companyId);
+
+  const transportData = useMemo(() => {
+    return rawTransportData?.map(t => {
+      const vehicle = vehicles?.find(v => v.id === t.vehicle_id);
+      const material = materials?.find(m => m.id === t.material_id);
+      return {
+        ...t,
+        vehicle_id: vehicle?.vehicle_number || t.vehicle_id,
+        materials: material?.name || t.materials
+      };
+    }) || [];
+  }, [rawTransportData, vehicles, materials]);
 
   console.log('[TransportPLReport] Component mounted/updated - companyId:', companyId, 'transport loading:', transportLoading, 'transport data count:', transportData?.length);
   console.log('[TransportPLReport] Transport data sample:', transportData?.slice(0, 2));

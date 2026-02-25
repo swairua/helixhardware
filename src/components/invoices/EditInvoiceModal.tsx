@@ -634,7 +634,47 @@ export function EditInvoiceModal({ open, onOpenChange, onSuccess, invoice }: Edi
                 No items added yet. Search and select products to add them.
               </div>
             ) : (
-              <Table>
+              <>
+                {/* Warning for invalid items */}
+                {(() => {
+                  const invalidItems = items.filter(item => item.quantity <= 0 || item.unit_price <= 0);
+                  if (invalidItems.length > 0) {
+                    return (
+                      <div className="mb-4 p-4 bg-destructive/10 border border-destructive/30 rounded-lg">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <h4 className="font-semibold text-destructive mb-2">Invalid Items Detected</h4>
+                            <p className="text-sm text-destructive/80 mb-3">
+                              The following items have invalid data and must be fixed or removed before saving:
+                            </p>
+                            <ul className="text-sm text-destructive/80 space-y-1 mb-3">
+                              {invalidItems.map(item => (
+                                <li key={item.id}>
+                                  • <strong>{item.product_name}</strong>
+                                  {item.quantity <= 0 && <span> (Qty: {item.quantity})</span>}
+                                  {item.unit_price <= 0 && <span> (Price: {item.unit_price})</span>}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setItems(items.filter(item => item.quantity > 0 && item.unit_price > 0));
+                              toast.success(`Removed ${invalidItems.length} invalid item${invalidItems.length !== 1 ? 's' : ''}`);
+                            }}
+                            className="text-destructive border-destructive/30 hover:bg-destructive/10 whitespace-nowrap ml-4"
+                          >
+                            Remove Invalid Items
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
+                <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Product</TableHead>
@@ -714,6 +754,7 @@ export function EditInvoiceModal({ open, onOpenChange, onSuccess, invoice }: Edi
                   ))}
                 </TableBody>
               </Table>
+              </>
             )}
 
             {/* Totals */}

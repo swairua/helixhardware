@@ -1,10 +1,10 @@
 import { apiClient } from '@/integrations/api';
 import { executeSQL } from '@/utils/execSQL';
 
-export type AuditedEntity = 'quotation' | 'proforma' | 'invoice' | 'credit_note' | 'user_invitation' | 'user_creation' | 'role' | 'permission';
+export type AuditedEntity = 'quotation' | 'proforma' | 'invoice' | 'credit_note' | 'user_invitation' | 'user_creation' | 'role' | 'permission' | 'product';
 
 interface AuditLogEntry {
-  action: 'DELETE' | 'CREATE' | 'APPROVE' | 'INVITE';
+  action: 'DELETE' | 'CREATE' | 'UPDATE' | 'APPROVE' | 'INVITE';
   entity_type: AuditedEntity;
   record_id: string | null;
   company_id?: string | null;
@@ -180,6 +180,37 @@ export async function logUserApproval(
     details: {
       user_email: email,
       approval_status: approvalStatus,
+      timestamp: new Date().toISOString(),
+    },
+  };
+
+  await insertAuditLog(entry);
+}
+
+export async function logProductAction(
+  action: 'CREATE' | 'UPDATE' | 'RESTOCK',
+  productId: string,
+  details: any,
+  companyId: string
+): Promise<void> {
+  // Ensure table exists (best-effort)
+  try {
+    await ensureAuditLogSchema();
+  } catch {
+    // ignore
+  }
+
+  const { user_id: actor_user_id, email: actor_email } = await getActorInfo();
+
+  const entry: AuditLogEntry = {
+    action: action === 'RESTOCK' ? 'APPROVE' : action as any,
+    entity_type: 'product',
+    record_id: productId,
+    company_id: companyId,
+    actor_user_id,
+    actor_email,
+    details: {
+      ...details,
       timestamp: new Date().toISOString(),
     },
   };

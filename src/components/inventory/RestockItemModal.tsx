@@ -82,6 +82,7 @@ export function RestockItemModal({ open, onOpenChange, onSuccess, item }: Restoc
         costPerUnit: Number(restockData.cost_per_unit || 0),
         companyId: currentCompany.id,
         supplier: restockData.supplier,
+        movementDate: restockData.restock_date,
         notes: restockData.notes ?
           `${restockData.notes}${restockData.reference_number ? ` (Ref: ${restockData.reference_number})` : ''}` :
           `Restock from ${restockData.supplier}${restockData.reference_number ? ` (Ref: ${restockData.reference_number})` : ''}`

@@ -223,7 +223,7 @@ export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: 
           product_id: productId,
           movement_type: newStock > oldStock ? 'IN' : 'OUT',
           reference_type: 'ADJUSTMENT',
-          quantity: newStock - oldStock,
+          quantity: Math.abs(newStock - oldStock),
           notes: `Stock updated during product edit (Manual Adjustment)`,
           movement_date: new Date().toISOString().split('T')[0]
         };
@@ -254,6 +254,23 @@ export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: 
       };
 
       await updateProduct.mutateAsync({ id: productId, data: updatedData });
+
+      // 3. Log the update action
+      try {
+        const { logProductAction } = await import('@/utils/auditLogger');
+        await logProductAction('UPDATE', productId, {
+          before: {
+            name: item?.name,
+            sku: item?.sku,
+            stock_quantity: oldStock,
+            unit_price: item?.unit_price
+          },
+          after: updatedData
+        }, currentCompany.id);
+      } catch (auditError) {
+        console.warn('Failed to log audit:', auditError);
+      }
+
       toast.success(`${formData.name} updated successfully!`);
       onSuccess();
       onOpenChange(false);

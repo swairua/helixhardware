@@ -411,6 +411,31 @@ export function useUpdateProduct() {
 }
 
 /**
+ * Hook to delete a product
+ */
+export function useDeleteProduct() {
+  const queryClient = useQueryClient();
+  const { db } = useDatabase();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const result = await db.delete('products', id);
+      if (result.error) throw result.error;
+      return result;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      toast.success('Product deleted successfully!');
+    },
+    onError: (error: any) => {
+      console.error('Error deleting product:', error);
+      const message = error?.message || 'Failed to delete product';
+      toast.error(message);
+    },
+  });
+}
+
+/**
  * Hook to adjust stock levels manually
  */
 export function useStockAdjustment() {

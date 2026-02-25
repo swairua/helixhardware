@@ -307,7 +307,7 @@ export function useCustomers(companyId?: string) {
     }));
   }, [rawData]);
 
-  return { data, isLoading, error, refetch: retry, loadingTimeout };
+  return { data, isLoading, error, retry, refetch: retry, loadingTimeout };
 }
 
 /**
@@ -341,7 +341,7 @@ export function useProducts(companyId?: string) {
     }));
   }, [rawData]);
 
-  return { data, isLoading, error, refetch: retry, loadingTimeout };
+  return { data, isLoading, error, retry, refetch: retry, loadingTimeout };
 }
 
 /**
@@ -405,6 +405,31 @@ export function useUpdateProduct() {
     onError: (error: any) => {
       console.error('Error updating product:', error);
       const message = error?.message || 'Failed to update product';
+      toast.error(message);
+    },
+  });
+}
+
+/**
+ * Hook to delete a product
+ */
+export function useDeleteProduct() {
+  const queryClient = useQueryClient();
+  const { db } = useDatabase();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const result = await db.delete('products', id);
+      if (result.error) throw result.error;
+      return result;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      toast.success('Product deleted successfully!');
+    },
+    onError: (error: any) => {
+      console.error('Error deleting product:', error);
+      const message = error?.message || 'Failed to delete product';
       toast.error(message);
     },
   });

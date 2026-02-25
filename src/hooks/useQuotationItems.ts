@@ -81,7 +81,8 @@ export const useRestockProduct = () => {
       costPerUnit,
       companyId,
       supplier,
-      notes
+      notes,
+      movementDate
     }: {
       productId: string;
       quantity: number;
@@ -89,6 +90,7 @@ export const useRestockProduct = () => {
       companyId: string;
       supplier?: string;
       notes?: string;
+      movementDate?: string;
     }) => {
       const db = getDatabase();
 
@@ -100,6 +102,7 @@ export const useRestockProduct = () => {
         reference_type: 'RESTOCK',
         quantity: quantity,
         cost_per_unit: costPerUnit,
+        movement_date: movementDate || new Date().toISOString().split('T')[0],
         notes: notes || `Restock from ${supplier || 'supplier'}`
       };
 
@@ -121,6 +124,19 @@ export const useRestockProduct = () => {
           stock_quantity: newStock,
           updated_at: new Date().toISOString()
         });
+
+        // Log the restock action
+        try {
+          const { logProductAction } = await import('@/utils/auditLogger');
+          await logProductAction('RESTOCK', productId, {
+            quantity,
+            supplier,
+            costPerUnit,
+            newStock
+          }, companyId);
+        } catch (auditError) {
+          console.warn('Failed to log audit for restock:', auditError);
+        }
       }
 
       return movementSelectResult.data;

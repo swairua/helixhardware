@@ -5,7 +5,7 @@ import { EditInventoryItemModal } from '@/components/inventory/EditInventoryItem
 import { ViewInventoryItemModal } from '@/components/inventory/ViewInventoryItemModal';
 import { RestockItemModal } from '@/components/inventory/RestockItemModal';
 import { StockAdjustmentModal } from '@/components/inventory/StockAdjustmentModal';
-import { useProducts, useCompanies } from '@/hooks/useDatabase';
+import { useProducts, useCompanies, useDeleteProduct } from '@/hooks/useDatabase';
 import { usePermissions } from '@/hooks/usePermissions';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -30,8 +30,19 @@ import {
   AlertTriangle,
   TrendingUp,
   TrendingDown,
-  Lock
+  Lock,
+  Trash2
 } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface InventoryItem {
   id: string;
@@ -87,12 +98,14 @@ export default function Inventory() {
   const [showViewModal, setShowViewModal] = useState(false);
   const [showRestockModal, setShowRestockModal] = useState(false);
   const [showAdjustmentModal, setShowAdjustmentModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
 
   // Fetch products from database
   const { data: companies } = useCompanies();
   const currentCompany = companies?.[0];
-  const { data: products, isLoading: loadingProducts, error: productsError, retry: retryProducts, loadingTimeout } = useProducts(currentCompany?.id);
+  const { data: products, isLoading: loadingProducts, error: productsError, refetch: retryProducts, loadingTimeout } = useProducts(currentCompany?.id);
+  const deleteProduct = useDeleteProduct();
   const { canView, canCreate, canEdit, loading: permissionsLoading, role } = usePermissions();
 
   useEffect(() => {
@@ -151,6 +164,27 @@ export default function Inventory() {
     }
     setSelectedItem(item);
     setShowRestockModal(true);
+  };
+
+  const handleDeleteItem = (item: InventoryItem) => {
+    if (!canEdit('inventory')) {
+      toast.error('You do not have permission to delete inventory items');
+      return;
+    }
+    setSelectedItem(item);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
+    if (selectedItem) {
+      try {
+        await deleteProduct.mutateAsync(selectedItem.id);
+        setShowDeleteModal(false);
+        setSelectedItem(null);
+      } catch (error) {
+        console.error('Error deleting item:', error);
+      }
+    }
   };
 
   const handleModalSuccess = () => {
@@ -520,6 +554,16 @@ export default function Inventory() {
                         >
                           <TrendingUp className="h-4 w-4 text-primary" />
                         </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDeleteItem(item)}
+                          title="Delete item"
+                          disabled={!canEdit('inventory')}
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                         {item.status === 'low_stock' && (
                           <Button
                             variant="outline"
@@ -591,6 +635,27 @@ export default function Inventory() {
           item={selectedItem}
         />
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteModal} onOpenChange={setShowDeleteModal}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the product <span className="font-semibold text-foreground">{selectedItem?.name}</span> and all associated stock movements. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setSelectedItem(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteProduct.isPending ? 'Deleting...' : 'Delete Product'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
     </div>
   );

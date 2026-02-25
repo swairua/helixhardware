@@ -72,6 +72,13 @@ export function ViewInventoryItemModal({ open, onOpenChange, item, onEdit, onRes
 
   if (!item) return null;
 
+  // Calculate last restocked date from movements
+  const lastRestockMovement = movements
+    .filter((m: any) => m.movement_type === 'IN' && m.reference_type === 'RESTOCK')
+    .sort((a: any, b: any) => new Date(b.created_at || b.movement_date).getTime() - new Date(a.created_at || a.movement_date).getTime())[0];
+
+  const lastRestocked = lastRestockMovement ? (lastRestockMovement.created_at || lastRestockMovement.movement_date) : item.lastRestocked;
+
   // Normalize field names from different sources
   const normalizedItem = {
     id: item.id,
@@ -86,7 +93,7 @@ export function ViewInventoryItemModal({ open, onOpenChange, item, onEdit, onRes
     costPrice: String(item.cost_price ?? item.costPrice ?? 0),
     description: item.description,
     unitOfMeasure: item.unit_of_measure || item.unitOfMeasure || 'pieces',
-    lastRestocked: item.lastRestocked,
+    lastRestocked: lastRestocked,
     status: (item.status || 'in_stock') as 'in_stock' | 'low_stock' | 'out_of_stock'
   };
 

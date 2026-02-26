@@ -23,7 +23,8 @@ import {
   Truck as TruckIcon,
   Package as PackageIcon,
   DollarSign,
-  AlertCircle
+  AlertCircle,
+  Download
 } from 'lucide-react';
 import { useCurrentCompany } from '@/contexts/CompanyContext';
 import { toast } from 'sonner';
@@ -235,6 +236,69 @@ export default function Transport({ initialTab = 'drivers' }: TransportProps) {
   };
 
   const sectionInfo = getSectionInfo();
+
+  const handleExportFinance = () => {
+    if (filteredFinances.length === 0) {
+      toast.error('No data to export');
+      return;
+    }
+
+    const formatCSVValue = (value: number) => {
+      if (!isFinite(value)) return '0.00';
+      return value.toFixed(2);
+    };
+
+    const headers = [
+      'Date',
+      'Vehicle ID',
+      'Material',
+      'Buying Price',
+      'Fuel Cost',
+      'Driver Fees',
+      'Other Expenses',
+      'Selling Price',
+      'Profit',
+      'Payment Status',
+      'Customer'
+    ];
+
+    const rows = filteredFinances.map(finance => {
+      const profit = (finance.selling_price || 0) -
+        ((finance.buying_price || 0) + (finance.fuel_cost || 0) +
+         (finance.driver_fees || 0) + (finance.other_expenses || 0));
+
+      return [
+        finance.date || '-',
+        String(finance.vehicle_number || '-'),
+        String(finance.materials || '-'),
+        formatCSVValue(Number(finance.buying_price) || 0),
+        formatCSVValue(Number(finance.fuel_cost) || 0),
+        formatCSVValue(Number(finance.driver_fees) || 0),
+        formatCSVValue(Number(finance.other_expenses) || 0),
+        formatCSVValue(Number(finance.selling_price) || 0),
+        formatCSVValue(profit),
+        String(finance.payment_status || '-'),
+        String(finance.customer_name || '-')
+      ];
+    });
+
+    const csvContent = [headers, ...rows]
+      .map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(','))
+      .join('\n');
+
+    // Use BOM for UTF-8 to help Excel
+    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `transport-finance-${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    toast.success('Finance summary exported successfully!');
+  };
 
   return (
     <div className="space-y-6">
@@ -564,10 +628,16 @@ export default function Transport({ initialTab = 'drivers' }: TransportProps) {
                 className="flex-1"
               />
             </div>
-            <Button onClick={() => setShowCreateFinanceModal(true)} className="ml-2">
-              <Plus className="h-4 w-4 mr-2" />
-              Create Trip
-            </Button>
+            <div className="flex gap-2 ml-2">
+              <Button variant="outline" onClick={handleExportFinance}>
+                <Download className="h-4 w-4 mr-2" />
+                Export
+              </Button>
+              <Button onClick={() => setShowCreateFinanceModal(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Create Trip
+              </Button>
+            </div>
           </div>
 
           <Card>

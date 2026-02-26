@@ -92,7 +92,7 @@ const DEFAULT_COMPANY: CompanyDetails = {
   country: 'Kenya',
   phone: '',
   email: 'info@helixgeneralhardware.com',
-  logo_url: 'https://cdn.builder.io/api/v1/image/assets%2Ffd1c9d5781fc4f20b6ad16683f5b85b3%2F274fc62c033e464584b0f50713695127?format=webp&width=800',
+  logo_url: 'https://cdn.builder.io/api/v1/image/assets%2F36ce27fc004b41f8b60187584af31eda%2F27b6e826e34640a69d9006759f91f8e8?format=webp&width=800&height=1200',
   primary_color: '#FF8C42'
 };
 

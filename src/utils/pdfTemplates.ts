@@ -616,11 +616,11 @@ const helixGeneralHardwareTemplate: PDFTemplate = {
       .header-wrapper {
         width: 100%;
         margin-bottom: 30px;
-        background: white;
+        background: #000000;
       }
 
       .company-header-banner {
-        background: white;
+        background: #000000;
         padding: 0;
         margin-bottom: 0;
         border-bottom: 2px solid ${primaryColor};

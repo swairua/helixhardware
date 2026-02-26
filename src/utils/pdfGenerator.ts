@@ -133,6 +133,19 @@ export const generatePDF = (data: DocumentData, downloadAsFile: boolean = true) 
   // Use company details from data or fall back to defaults
   const company = data.company || DEFAULT_COMPANY;
 
+  // Format document number to remove year part if present (requested by user)
+  // e.g. INV-2026-0027 -> INV-0027
+  const stripYear = (num?: string) => {
+    if (!num) return num;
+    // Handle both INV-2026-0027 and INV 2026-0027 formats
+    return num.replace(/([A-Z]+)[-\s][0-9]{4}-/, '$1-');
+  };
+
+  data.number = stripYear(data.number) || data.number;
+  if (data.invoice_number) {
+    data.invoice_number = stripYear(data.invoice_number);
+  }
+
   // Get primary color from company settings, with fallback to orange
   const primaryColor = (company as any)?.primary_color || '#FF8C42';
   const primaryColorLight = lightenColor(primaryColor, 25);

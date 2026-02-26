@@ -563,7 +563,7 @@ const helixGeneralHardwareTemplate: PDFTemplate = {
       <div class="header-wrapper">
         <!-- Full Width Company Branding Banner -->
         <div class="company-header-banner">
-          <img src="https://cdn.builder.io/api/v1/image/assets%2Fd476f7d214e64b3786cf9571f2fca601%2F0e4fc153474a41daad101ecb092e73c8?format=webp&width=800&height=1200" alt="Helix General Hardware" class="banner-image" />
+          <img src="https://cdn.builder.io/api/v1/image/assets%2F36ce27fc004b41f8b60187584af31eda%2F27b6e826e34640a69d9006759f91f8e8?format=webp&width=800&height=1200" alt="Helix General Hardware" class="banner-image" />
         </div>
 
         <!-- Divider Line -->
@@ -616,11 +616,11 @@ const helixGeneralHardwareTemplate: PDFTemplate = {
       .header-wrapper {
         width: 100%;
         margin-bottom: 30px;
-        background: white;
+        background: #000000;
       }
 
       .company-header-banner {
-        background: white;
+        background: #000000;
         padding: 0;
         margin-bottom: 0;
         border-bottom: 2px solid ${primaryColor};

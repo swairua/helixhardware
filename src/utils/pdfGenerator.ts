@@ -92,7 +92,7 @@ const DEFAULT_COMPANY: CompanyDetails = {
   country: 'Kenya',
   phone: '',
   email: 'info@helixgeneralhardware.com',
-  logo_url: 'https://cdn.builder.io/api/v1/image/assets%2Ffd1c9d5781fc4f20b6ad16683f5b85b3%2F274fc62c033e464584b0f50713695127?format=webp&width=800',
+  logo_url: 'https://cdn.builder.io/api/v1/image/assets%2F36ce27fc004b41f8b60187584af31eda%2F27b6e826e34640a69d9006759f91f8e8?format=webp&width=800&height=1200',
   primary_color: '#FF8C42'
 };
 
@@ -132,6 +132,19 @@ const analyzeColumns = (items: DocumentData['items']) => {
 export const generatePDF = (data: DocumentData, downloadAsFile: boolean = true) => {
   // Use company details from data or fall back to defaults
   const company = data.company || DEFAULT_COMPANY;
+
+  // Format document number to remove year part if present (requested by user)
+  // e.g. INV-2026-0027 -> INV-0027
+  const stripYear = (num?: string) => {
+    if (!num) return num;
+    // Handle both INV-2026-0027 and INV 2026-0027 formats
+    return num.replace(/([A-Z]+)[-\s][0-9]{4}-/, '$1-');
+  };
+
+  data.number = stripYear(data.number) || data.number;
+  if (data.invoice_number) {
+    data.invoice_number = stripYear(data.invoice_number);
+  }
 
   // Get primary color from company settings, with fallback to orange
   const primaryColor = (company as any)?.primary_color || '#FF8C42';

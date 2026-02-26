@@ -929,6 +929,7 @@ export const generatePaymentReceiptPDF = async (payment: any, company?: CompanyD
     type: 'receipt',
     number: payment.number || payment.payment_number || payment.receipt_number || `REC-${Date.now()}`,
     date: payment.date || payment.payment_date || payment.receipt_date || new Date().toISOString().split('T')[0],
+    pdfTemplate: 'helix_general_hardware', // Use the full-width header template
     company: company,
     customer: {
       name: payment.customer || payment.customers?.name || 'Unknown Customer',
@@ -1029,6 +1030,7 @@ export const downloadInvoicePDF = async (invoice: any, documentType: 'INVOICE' |
     due_date: invoice.due_date,
     lpo_number: invoice.lpo_number,
     invoice_number: docType === 'receipt' ? invoice.invoice_number : undefined, // Pass invoice_number for receipts
+    pdfTemplate: 'helix_general_hardware', // Use the full-width header template
     company: company, // Pass company details
     customer: {
       name: invoice.customers?.name || 'Unknown Customer',

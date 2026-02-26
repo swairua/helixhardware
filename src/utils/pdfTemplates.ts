@@ -550,8 +550,8 @@ const compactTemplate: PDFTemplate = {
 };
 
 /**
- * Helix General Hardware template - Professional design for hardware distributor
- * Features: Red document badge, company branding with tagline, clean layout
+ * Helix General Hardware template - Full-width header design
+ * Features: Spans full width with company branding and professional layout
  */
 const helixGeneralHardwareTemplate: PDFTemplate = {
   name: 'helix_general_hardware',
@@ -559,61 +559,63 @@ const helixGeneralHardwareTemplate: PDFTemplate = {
   description: 'Professional template for Helix General Hardware & Timber Products',
   renderHeader: (company: CompanyDataForTemplate, data: TemplateData, primaryColor: string) => {
     return `
-      <!-- Header Section with Badge -->
-      <div class="header">
-        <!-- Document Type Badge -->
-        <div class="document-badge">
-          <span class="badge-text">${data.documentTitle}</span>
-        </div>
-
-        <!-- Row 1: Company Branding -->
-        <div class="header-row-1">
-          <div class="company-logo-icon">H</div>
-          <div class="company-details-block">
-            <div class="company-name">HELIX GENERAL HARDWARE</div>
-            <div class="company-subtitle">Dealers in General Hardware & Timber Products</div>
-            <div class="company-contact">P.O Box 2424 -01000 Thika. Tel: 0720 717 463</div>
-            <div class="company-tagline"><em>seamlessly within your reach</em></div>
+      <!-- Header Section - Full Width -->
+      <div class="header-wrapper">
+        <!-- Company Branding Header -->
+        <div class="company-header">
+          <div class="header-content">
+            <div class="logo-section">
+              <div class="logo-placeholder">H</div>
+            </div>
+            <div class="company-info-section">
+              <div class="company-name">HELIX GENERAL HARDWARE</div>
+              <div class="company-subtitle">Dealers in General Hardware & Timber Products</div>
+              <div class="company-details">
+                <div>P.O Box 2424 -01000 Thika.  Kenya</div>
+                <div>Tel: 0720 717 463</div>
+                <div>Email: info@helixgeneralhardware.com</div>
+              </div>
+              <div class="company-tagline">seamlessly within your reach</div>
+            </div>
           </div>
         </div>
 
-        <!-- Header separator line -->
-        <div class="header-separator"></div>
+        <!-- Divider Line -->
+        <div class="header-divider"></div>
 
-        <!-- Row 2: Customer Details (50%) + Document Details (50%) -->
-        <div class="header-row-2">
-          <div class="customer-info-block">
-            <div class="section-title">Bill To</div>
+        <!-- Document Info and Customer Section -->
+        <div class="header-row">
+          <div class="customer-section">
+            <div class="section-label">CLIENT</div>
             ${data.customer ? `
               <div class="customer-name">${data.customer.name}</div>
               <div class="customer-details">
-                ${data.customer.address ? `${data.customer.address}<br>` : ''}
-                ${data.customer.city ? `${data.customer.city}` : ''}${data.customer.country ? `, ${data.customer.country}` : ''}<br>
-                ${data.customer.phone ? `${data.customer.phone}<br>` : ''}
-                ${data.customer.email ? `${data.customer.email}` : ''}
+                ${data.customer.address ? `<div>${data.customer.address}</div>` : ''}
+                ${data.customer.city ? `<div>${data.customer.city}${data.customer.country ? ', ' + data.customer.country : ''}</div>` : ''}
               </div>
             ` : ''}
           </div>
 
-          <div class="document-info">
-            <div class="document-meta-block">
-              <div class="meta-row">
-                <span class="meta-label">Document #</span>
+          <div class="document-section">
+            <div class="section-label">INVOICE</div>
+            <div class="document-meta">
+              <div class="meta-item">
+                <span class="meta-label">Number:</span>
                 <span class="meta-value">${data.documentNumber}</span>
               </div>
-              <div class="meta-row">
-                <span class="meta-label">Date</span>
+              <div class="meta-item">
+                <span class="meta-label">Date:</span>
                 <span class="meta-value">${data.documentDate}</span>
               </div>
               ${data.relatedDocument ? `
-              <div class="meta-row">
-                <span class="meta-label">${data.relatedDocument.label}</span>
+              <div class="meta-item">
+                <span class="meta-label">${data.relatedDocument.label}:</span>
                 <span class="meta-value">${data.relatedDocument.value}</span>
               </div>
               ` : ''}
               ${data.additionalDetails ? data.additionalDetails.map(detail => `
-              <div class="meta-row">
-                <span class="meta-label">${detail.label}</span>
+              <div class="meta-item">
+                <span class="meta-label">${detail.label}:</span>
                 <span class="meta-value">${detail.value}</span>
               </div>
               `).join('') : ''}
@@ -625,162 +627,153 @@ const helixGeneralHardwareTemplate: PDFTemplate = {
   },
   getCSS: (primaryColor: string) => {
     return `
-      .header {
-        display: grid;
-        grid-template-columns: 1fr;
-        grid-template-rows: auto auto auto auto;
+      .header-wrapper {
+        width: 100%;
         margin-bottom: 30px;
-        gap: 15px;
+        background: white;
       }
 
-      .document-badge {
-        display: flex;
-        align-items: center;
-        margin-bottom: 10px;
+      .company-header {
+        background: white;
+        padding: 20px 0;
+        border-bottom: 2px solid ${primaryColor};
       }
 
-      .badge-text {
-        display: inline-block;
-        background: ${primaryColor};
-        color: white;
-        padding: 6px 16px;
-        border-radius: 4px;
-        font-size: 11px;
-        font-weight: bold;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-      }
-
-      .header-row-1 {
+      .header-content {
         display: grid;
-        grid-template-columns: auto 1fr;
+        grid-template-columns: 80px 1fr;
         gap: 20px;
         align-items: flex-start;
-        padding-bottom: 15px;
       }
 
-      .header-row-2 {
-        display: grid;
-        grid-template-columns: 50% 50%;
-        gap: 20px;
-        padding-top: 10px;
+      .logo-section {
+        display: flex;
+        align-items: flex-start;
       }
 
-      .header-separator {
-        height: 2px;
+      .logo-placeholder {
+        width: 70px;
+        height: 70px;
         background: ${primaryColor};
-        grid-column: 1 / -1;
-      }
-
-      .company-logo-icon {
+        color: white;
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 60px;
-        height: 60px;
+        font-size: 36px;
+        font-weight: bold;
         border: 3px solid ${primaryColor};
         border-radius: 50%;
-        font-size: 32px;
-        font-weight: bold;
-        color: white;
-        background: ${primaryColor};
         flex-shrink: 0;
       }
 
-      .company-details-block {
+      .company-info-section {
         width: 100%;
       }
 
       .company-name {
         font-size: 20px;
         font-weight: bold;
-        margin-bottom: 2px;
         color: ${primaryColor};
+        margin: 0 0 2px 0;
         letter-spacing: 1px;
       }
 
       .company-subtitle {
-        font-size: 12px;
+        font-size: 13px;
         color: ${primaryColor};
-        margin-bottom: 4px;
+        margin: 0 0 6px 0;
         font-weight: 500;
+        font-style: italic;
       }
 
-      .company-contact {
-        font-size: 10px;
+      .company-details {
+        font-size: 11px;
         color: #333;
-        margin-bottom: 4px;
-        line-height: 1.3;
+        line-height: 1.5;
+        margin-bottom: 6px;
+      }
+
+      .company-details div {
+        margin: 0;
       }
 
       .company-tagline {
         font-size: 11px;
         color: #666;
         font-style: italic;
-        margin-top: 2px;
+        margin-top: 4px;
       }
 
-      .document-info {
-        text-align: left;
-        width: 100%;
-        display: flex;
-        justify-content: flex-end;
-      }
-
-      .document-meta-block {
-        text-align: right;
-      }
-
-      .meta-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 20px;
-        margin-bottom: 6px;
-        font-size: 10px;
-      }
-
-      .meta-label {
-        font-weight: 500;
-        color: #666;
-        text-align: right;
-        min-width: 80px;
-      }
-
-      .meta-value {
-        font-weight: 600;
-        color: #1a1a1a;
-        text-align: right;
-        min-width: 100px;
-      }
-
-      .customer-info-block {
-        text-align: left;
+      .header-divider {
+        height: 2px;
+        background: ${primaryColor};
         width: 100%;
       }
 
-      .section-title {
-        font-size: 10px;
+      .header-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0;
+        padding: 20px 0;
+        background: white;
+      }
+
+      .customer-section {
+        border-right: 1px solid #e9ecef;
+        padding-right: 20px;
+      }
+
+      .document-section {
+        padding-left: 20px;
+      }
+
+      .section-label {
+        font-size: 11px;
         font-weight: bold;
         color: ${primaryColor};
-        margin: 0 0 8px 0;
         text-transform: uppercase;
-        letter-spacing: 0.8px;
+        letter-spacing: 1px;
+        margin-bottom: 10px;
       }
 
       .customer-name {
-        font-size: 12px;
+        font-size: 13px;
         font-weight: bold;
-        margin-bottom: 4px;
         color: #1a1a1a;
+        margin-bottom: 4px;
       }
 
       .customer-details {
-        font-size: 10px;
+        font-size: 11px;
         color: #666;
         line-height: 1.5;
-        word-wrap: break-word;
-        overflow-wrap: break-word;
+      }
+
+      .customer-details div {
+        margin: 2px 0;
+      }
+
+      .document-meta {
+        font-size: 11px;
+      }
+
+      .meta-item {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 10px;
+        margin-bottom: 6px;
+        text-align: right;
+      }
+
+      .meta-label {
+        font-weight: bold;
+        color: #666;
+        text-align: left;
+      }
+
+      .meta-value {
+        color: #1a1a1a;
+        font-weight: 600;
       }
     `;
   }

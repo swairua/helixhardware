@@ -716,12 +716,6 @@ export const generatePDF = (data: DocumentData, downloadAsFile: boolean = true) 
               <td class="amount">${formatCurrency(data.subtotal)}</td>
             </tr>
             ` : ''}
-            ${data.tax_amount ? `
-            <tr>
-              <td class="label">Tax Amount:</td>
-              <td class="amount">${formatCurrency(data.tax_amount)}</td>
-            </tr>
-            ` : ''}
             <tr class="total-row">
               <td class="label">${data.type === 'statement' ? 'TOTAL OUTSTANDING:' : 'TOTAL:'}</td>
               <td class="amount">${formatCurrency(data.total_amount)}</td>

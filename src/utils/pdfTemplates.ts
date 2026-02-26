@@ -559,25 +559,11 @@ const helixGeneralHardwareTemplate: PDFTemplate = {
   description: 'Professional template for Helix General Hardware & Timber Products',
   renderHeader: (company: CompanyDataForTemplate, data: TemplateData, primaryColor: string) => {
     return `
-      <!-- Header Section - Full Width -->
+      <!-- Header Section - Full Width Banner -->
       <div class="header-wrapper">
-        <!-- Company Branding Header -->
-        <div class="company-header">
-          <div class="header-content">
-            <div class="logo-section">
-              <div class="logo-placeholder">H</div>
-            </div>
-            <div class="company-info-section">
-              <div class="company-name">HELIX GENERAL HARDWARE</div>
-              <div class="company-subtitle">Dealers in General Hardware & Timber Products</div>
-              <div class="company-details">
-                <div>P.O Box 2424 -01000 Thika.  Kenya</div>
-                <div>Tel: 0720 717 463</div>
-                <div>Email: info@helixgeneralhardware.com</div>
-              </div>
-              <div class="company-tagline">seamlessly within your reach</div>
-            </div>
-          </div>
+        <!-- Full Width Company Branding Banner -->
+        <div class="company-header-banner">
+          <img src="https://cdn.builder.io/api/v1/image/assets%2Fd476f7d214e64b3786cf9571f2fca601%2F0e4fc153474a41daad101ecb092e73c8?format=webp&width=800&height=1200" alt="Helix General Hardware" class="banner-image" />
         </div>
 
         <!-- Divider Line -->
@@ -633,81 +619,26 @@ const helixGeneralHardwareTemplate: PDFTemplate = {
         background: white;
       }
 
-      .company-header {
+      .company-header-banner {
         background: white;
-        padding: 20px 0;
+        padding: 0;
+        margin-bottom: 0;
         border-bottom: 2px solid ${primaryColor};
+        overflow: hidden;
       }
 
-      .header-content {
-        display: grid;
-        grid-template-columns: 80px 1fr;
-        gap: 20px;
-        align-items: flex-start;
-      }
-
-      .logo-section {
-        display: flex;
-        align-items: flex-start;
-      }
-
-      .logo-placeholder {
-        width: 70px;
-        height: 70px;
-        background: ${primaryColor};
-        color: white;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 36px;
-        font-weight: bold;
-        border: 3px solid ${primaryColor};
-        border-radius: 50%;
-        flex-shrink: 0;
-      }
-
-      .company-info-section {
+      .banner-image {
         width: 100%;
-      }
-
-      .company-name {
-        font-size: 20px;
-        font-weight: bold;
-        color: ${primaryColor};
-        margin: 0 0 2px 0;
-        letter-spacing: 1px;
-      }
-
-      .company-subtitle {
-        font-size: 13px;
-        color: ${primaryColor};
-        margin: 0 0 6px 0;
-        font-weight: 500;
-        font-style: italic;
-      }
-
-      .company-details {
-        font-size: 11px;
-        color: #333;
-        line-height: 1.5;
-        margin-bottom: 6px;
-      }
-
-      .company-details div {
-        margin: 0;
-      }
-
-      .company-tagline {
-        font-size: 11px;
-        color: #666;
-        font-style: italic;
-        margin-top: 4px;
+        height: auto;
+        display: block;
+        object-fit: cover;
       }
 
       .header-divider {
         height: 2px;
         background: ${primaryColor};
         width: 100%;
+        margin-bottom: 0;
       }
 
       .header-row {

@@ -214,19 +214,22 @@ export default function TransportPLReport() {
       'Payment Status',
       'Customer'
     ];
-    const rows = filteredTransports.map(t => [
-      new Date(t.date).toLocaleDateString(),
-      t.vehicle_id || 'Unknown',
-      t.materials || '-',
-      formatCSVValue(t.buying_price || 0),
-      formatCSVValue(t.fuel_cost || 0),
-      formatCSVValue(t.driver_fees || 0),
-      formatCSVValue(t.other_expenses || 0),
-      formatCSVValue(t.selling_price || 0),
-      formatCSVValue((t.selling_price || 0) - ((t.buying_price || 0) + (t.fuel_cost || 0) + (t.driver_fees || 0) + (t.other_expenses || 0))),
-      t.payment_status || '-',
-      t.customer_name || '-'
-    ]);
+    const rows = filteredTransports.map(t => {
+      const profit = (t.selling_price || 0) - ((t.buying_price || 0) + (t.fuel_cost || 0) + (t.driver_fees || 0) + (t.other_expenses || 0));
+      return [
+        new Date(t.date).toLocaleDateString(),
+        String(t.vehicle_id || 'Unknown'),
+        String(t.materials || '-'),
+        formatCSVValue(Number(t.buying_price) || 0),
+        formatCSVValue(Number(t.fuel_cost) || 0),
+        formatCSVValue(Number(t.driver_fees) || 0),
+        formatCSVValue(Number(t.other_expenses) || 0),
+        formatCSVValue(Number(t.selling_price) || 0),
+        formatCSVValue(profit),
+        String(t.payment_status || '-'),
+        String(t.customer_name || '-')
+      ];
+    });
 
     const csvContent = [headers, ...rows]
       .map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(','))

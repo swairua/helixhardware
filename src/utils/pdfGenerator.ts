@@ -762,7 +762,7 @@ export const generatePDF = (data: DocumentData, downloadAsFile: boolean = true) 
 
         <!-- Footer -->
         <div class="footer">
-          <em>${data.type === 'invoice' ? 'Accounts payable on demand' : 'Thank you for trading with us'}</em>
+          <em>${data.type === 'invoice' ? 'Accounts are due on demand' : 'Thank you for trading with us'}</em>
         </div>
       </div>
     </body>

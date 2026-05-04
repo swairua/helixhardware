@@ -354,6 +354,7 @@ export type Database = {
           balance_due: number | null
           lpo_number: string | null
           status: string | null
+          display_as_percentage: boolean | null
           created_by: number | null
           created_at: string | null
           updated_at: string | null
@@ -373,6 +374,7 @@ export type Database = {
           balance_due?: number | null
           lpo_number?: string | null
           status?: string | null
+          display_as_percentage?: boolean | null
           created_by?: number | null
           created_at?: string | null
           updated_at?: string | null
@@ -392,6 +394,7 @@ export type Database = {
           balance_due?: number | null
           lpo_number?: string | null
           status?: string | null
+          display_as_percentage?: boolean | null
           created_by?: number | null
           created_at?: string | null
           updated_at?: string | null
@@ -827,6 +830,7 @@ export type Database = {
           valid_until: string | null
           terms_and_conditions: string | null
           status: string | null
+          display_as_percentage: boolean | null
           created_at: string | null
         }
         Insert: {
@@ -843,6 +847,7 @@ export type Database = {
           valid_until?: string | null
           terms_and_conditions?: string | null
           status?: string | null
+          display_as_percentage?: boolean | null
           created_at?: string | null
         }
         Update: {
@@ -859,6 +864,7 @@ export type Database = {
           valid_until?: string | null
           terms_and_conditions?: string | null
           status?: string | null
+          display_as_percentage?: boolean | null
           created_at?: string | null
         }
       }
@@ -912,6 +918,7 @@ export type Database = {
           total_amount: number | null
           notes: string | null
           terms_and_conditions: string | null
+          display_as_percentage: boolean | null
           created_by: number | null
           created_at: string | null
           updated_at: string | null
@@ -936,6 +943,7 @@ export type Database = {
           total_amount?: number | null
           notes?: string | null
           terms_and_conditions?: string | null
+          display_as_percentage?: boolean | null
           created_by?: number | null
           created_at?: string | null
           updated_at?: string | null
@@ -960,6 +968,7 @@ export type Database = {
           total_amount?: number | null
           notes?: string | null
           terms_and_conditions?: string | null
+          display_as_percentage?: boolean | null
           created_by?: number | null
           created_at?: string | null
           updated_at?: string | null

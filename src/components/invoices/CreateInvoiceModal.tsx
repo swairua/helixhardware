@@ -53,14 +53,25 @@ interface InvoiceItem {
   line_total: number;
 }
 
+interface TransportFinancePreFill {
+  customer_name?: string;
+  customer_id?: string;
+  date?: string;
+  selling_price?: number;
+  vehicle_number?: string;
+  materials?: string;
+  id?: string;
+}
+
 interface CreateInvoiceModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
   preSelectedCustomer?: any;
+  transportFinanceData?: TransportFinancePreFill;
 }
 
-export function CreateInvoiceModal({ open, onOpenChange, onSuccess, preSelectedCustomer }: CreateInvoiceModalProps) {
+export function CreateInvoiceModal({ open, onOpenChange, onSuccess, preSelectedCustomer, transportFinanceData }: CreateInvoiceModalProps) {
   const [selectedCustomerId, setSelectedCustomerId] = useState(preSelectedCustomer?.id || '');
   const [invoiceDate, setInvoiceDate] = useState(new Date().toISOString().split('T')[0]);
   const [dueDate, setDueDate] = useState(
@@ -106,12 +117,29 @@ export function CreateInvoiceModal({ open, onOpenChange, onSuccess, preSelectedC
   const defaultTax = taxSettings?.find(tax => tax.is_default && tax.is_active);
   const defaultTaxRate = defaultTax?.rate || 16; // Fallback to 16% if no default is set
 
-  // Handle pre-selected customer
+  // Handle pre-selected customer or transport finance data
   useEffect(() => {
-    if (preSelectedCustomer && open) {
-      setSelectedCustomerId(preSelectedCustomer.id);
+    if (open) {
+      if (transportFinanceData) {
+        // Pre-fill from transport finance data
+        if (transportFinanceData.date) {
+          setInvoiceDate(transportFinanceData.date);
+        }
+
+        // Try to find customer by name if available
+        if (transportFinanceData.customer_name && customers) {
+          const matchingCustomer = customers.find(
+            c => c.name.toLowerCase() === transportFinanceData.customer_name?.toLowerCase()
+          );
+          if (matchingCustomer) {
+            setSelectedCustomerId(String(matchingCustomer.id));
+          }
+        }
+      } else if (preSelectedCustomer) {
+        setSelectedCustomerId(preSelectedCustomer.id);
+      }
     }
-  }, [preSelectedCustomer, open]);
+  }, [preSelectedCustomer, transportFinanceData, open, customers]);
 
   // Handle customer creation success
   const handleCustomerCreated = (customer: any) => {
@@ -590,7 +618,7 @@ export function CreateInvoiceModal({ open, onOpenChange, onSuccess, preSelectedC
               {documentType === 'invoice' ? (
                 <>
                   <FileText className="h-5 w-5 text-primary" />
-                  <span>Create New Invoice</span>
+                  <span>{transportFinanceData ? 'Create Invoice from Trip' : 'Create New Invoice'}</span>
                 </>
               ) : (
                 <>
@@ -620,7 +648,9 @@ export function CreateInvoiceModal({ open, onOpenChange, onSuccess, preSelectedC
           </div>
           <DialogDescription>
             {documentType === 'invoice'
-              ? 'Create a detailed invoice with multiple items for your customer'
+              ? transportFinanceData
+                ? `Create an invoice from trip reference: ${transportFinanceData.vehicle_number} - ${transportFinanceData.materials}`
+                : 'Create a detailed invoice with multiple items for your customer'
               : 'Create a direct receipt with payment collection'
             }
           </DialogDescription>

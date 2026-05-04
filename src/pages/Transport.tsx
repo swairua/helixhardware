@@ -24,7 +24,8 @@ import {
   Package as PackageIcon,
   DollarSign,
   AlertCircle,
-  Download
+  Download,
+  FileText
 } from 'lucide-react';
 import { useCurrentCompany } from '@/contexts/CompanyContext';
 import { toast } from 'sonner';
@@ -56,6 +57,7 @@ import { EditMaterialModal } from '@/components/transport/EditMaterialModal';
 import { TransportFinanceModal } from '@/components/transport/TransportFinanceModal';
 import { EditTransportFinanceModal } from '@/components/transport/EditTransportFinanceModal';
 import { RecordTripPaymentModal } from '@/components/transport/RecordTripPaymentModal';
+import { CreateInvoiceModal } from '@/components/invoices/CreateInvoiceModal';
 
 interface Driver {
   id: string;
@@ -137,6 +139,10 @@ export default function Transport({ initialTab = 'drivers' }: TransportProps) {
   // Payment state
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedTripForPayment, setSelectedTripForPayment] = useState<TransportFinance | null>(null);
+
+  // Invoice creation state
+  const [showCreateInvoiceModal, setShowCreateInvoiceModal] = useState(false);
+  const [selectedTripForInvoice, setSelectedTripForInvoice] = useState<TransportFinance | null>(null);
 
   const { currentCompany, isLoading: isCompanyLoading } = useCurrentCompany();
   const DEFAULT_COMPANY_ID = '550e8400-e29b-41d4-a716-446655440000';
@@ -713,6 +719,18 @@ export default function Transport({ initialTab = 'drivers' }: TransportProps) {
                                   variant="outline"
                                   size="sm"
                                   onClick={() => {
+                                    setSelectedTripForInvoice(finance);
+                                    setShowCreateInvoiceModal(true);
+                                  }}
+                                  title="Create an invoice from this trip"
+                                >
+                                  <FileText className="h-4 w-4 mr-1" />
+                                  Invoice
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
                                     setSelectedTripForPayment(finance);
                                     setShowPaymentModal(true);
                                   }}
@@ -867,6 +885,26 @@ export default function Transport({ initialTab = 'drivers' }: TransportProps) {
         trip={selectedTripForPayment}
         companyId={activeCompanyId}
       />
+
+      {selectedTripForInvoice && (
+        <CreateInvoiceModal
+          open={showCreateInvoiceModal}
+          onOpenChange={setShowCreateInvoiceModal}
+          onSuccess={() => {
+            setShowCreateInvoiceModal(false);
+            setSelectedTripForInvoice(null);
+            toast.success('Invoice created successfully!');
+          }}
+          transportFinanceData={{
+            customer_name: selectedTripForInvoice.customer_name,
+            date: selectedTripForInvoice.date,
+            selling_price: selectedTripForInvoice.selling_price,
+            vehicle_number: selectedTripForInvoice.vehicle_number,
+            materials: selectedTripForInvoice.materials,
+            id: selectedTripForInvoice.id
+          }}
+        />
+      )}
     </div>
   );
 }

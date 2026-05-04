@@ -193,7 +193,7 @@ export const generatePDF = (data: DocumentData, downloadAsFile: boolean = true) 
   const templateName = data.pdfTemplate || (company as any)?.pdf_template || 'default';
 
   // Analyze which columns have values
-  const visibleColumns = analyzeColumns(data.items);
+  const visibleColumns = analyzeColumns(data.items, data.display_as_percentage);
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-KE', {
       style: 'currency',
@@ -842,16 +842,31 @@ export const generatePDF = (data: DocumentData, downloadAsFile: boolean = true) 
 
   // Generate filename based on document type and number
   const generateFilename = () => {
-    const date = new Date().toISOString().split('T')[0];
-    const docNumber = data.number.replace(/\//g, '-');
-    const typeLabel = data.type === 'proforma' ? 'PROFORMA' :
-                      data.type === 'delivery' ? 'DELIVERY' :
-                      data.type === 'statement' ? 'STATEMENT' :
-                      data.type === 'receipt' ? 'RECEIPT' :
-                      data.type === 'remittance' ? 'REMITTANCE' :
-                      data.type === 'lpo' ? 'LPO' :
-                      data.type.toUpperCase();
-    return `${typeLabel}_${docNumber}_${date}.pdf`;
+    const docNumber = data.number.replace(/\//g, '-').replace(/\s+/g, ' ');
+
+    if (data.type === 'receipt') {
+      // Receipt format: RECEIPT - {receipt_number}
+      return `RECEIPT - ${docNumber}.pdf`;
+    } else if (data.type === 'invoice') {
+      // Invoice format: INVOICE - {project_title} or {customer_name} as fallback
+      // Note: project_title should be passed in data if available from quotation
+      const projectTitle = (data as any).project_title || (data as any).project_description || data.customer.name || docNumber;
+      return `INVOICE - ${projectTitle}`.replace(/\//g, '-').concat('.pdf');
+    } else if (data.type === 'proforma') {
+      return `PROFORMA - ${docNumber}.pdf`;
+    } else if (data.type === 'quotation') {
+      return `QUOTATION - ${docNumber}.pdf`;
+    } else if (data.type === 'delivery') {
+      return `DELIVERY - ${docNumber}.pdf`;
+    } else if (data.type === 'statement') {
+      return `STATEMENT - ${docNumber}.pdf`;
+    } else if (data.type === 'remittance') {
+      return `REMITTANCE - ${docNumber}.pdf`;
+    } else if (data.type === 'lpo') {
+      return `LPO - ${docNumber}.pdf`;
+    } else {
+      return `${data.type.toUpperCase()} - ${docNumber}.pdf`;
+    }
   };
 
   if (downloadAsFile) {
@@ -1132,6 +1147,7 @@ export const downloadInvoicePDF = async (invoice: any, documentType: 'INVOICE' |
     lpo_number: invoice.lpo_number,
     invoice_number: docType === 'receipt' ? invoice.invoice_number : undefined, // Pass invoice_number for receipts
     pdfTemplate: 'helix_general_hardware', // Use the full-width header template
+    display_as_percentage: invoice.display_as_percentage,
     company: company, // Pass company details
     customer: {
       name: invoice.customers?.name || 'Unknown Customer',
@@ -1177,6 +1193,7 @@ export const downloadQuotationPDF = async (quotation: any, company?: CompanyDeta
     number: quotation.quotation_number,
     date: quotation.quotation_date,
     valid_until: quotation.valid_until,
+    display_as_percentage: quotation.display_as_percentage,
     company: company, // Pass company details
     customer: {
       name: quotation.customers?.name || 'Unknown Customer',

@@ -68,6 +68,7 @@ export function CreateInvoiceModal({ open, onOpenChange, onSuccess, preSelectedC
   );
   const [lpoNumber, setLpoNumber] = useState('');
   const [notes, setNotes] = useState('');
+  const [displayAsPercentage, setDisplayAsPercentage] = useState(false);
 
   const [items, setItems] = useState<InvoiceItem[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -484,6 +485,7 @@ export function CreateInvoiceModal({ open, onOpenChange, onSuccess, preSelectedC
           total_amount: totalAmount,
           paid_amount: 0,
           balance_due: balanceDue,
+          display_as_percentage: displayAsPercentage,
           notes: notes,
           created_by: profile?.id
         };
@@ -571,6 +573,7 @@ export function CreateInvoiceModal({ open, onOpenChange, onSuccess, preSelectedC
     setDueDate(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
     setLpoNumber('');
     setNotes('');
+    setDisplayAsPercentage(false);
     setItems([]);
     setSearchProduct('');
     setPaymentAmount('');
@@ -767,6 +770,18 @@ export function CreateInvoiceModal({ open, onOpenChange, onSuccess, preSelectedC
                     rows={3}
                     placeholder="Additional notes for this invoice..."
                   />
+                </div>
+
+                {/* Display as Percentage Toggle */}
+                <div className="flex items-center space-x-2 pt-2 border-t">
+                  <Checkbox
+                    id="display_as_percentage"
+                    checked={displayAsPercentage}
+                    onCheckedChange={(checked) => setDisplayAsPercentage(checked as boolean)}
+                  />
+                  <Label htmlFor="display_as_percentage" className="cursor-pointer font-normal">
+                    Display as progressive percentages (PDF will show calculated amounts instead)
+                  </Label>
                 </div>
               </CardContent>
             </Card>

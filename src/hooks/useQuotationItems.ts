@@ -310,6 +310,7 @@ export const useConvertQuotationToInvoice = () => {
         subtotal: quotation.subtotal,
         tax_amount: quotation.tax_amount,
         total_amount: quotation.total_amount,
+        display_as_percentage: quotation.display_as_percentage,
         created_by: createdBy
       };
 

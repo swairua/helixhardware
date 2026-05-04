@@ -116,7 +116,7 @@ export function RestockItemModal({ open, onOpenChange, onSuccess, item }: Restoc
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-[95vw] sm:max-w-2xl md:max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center space-x-2">
             <Package className="h-5 w-5 text-warning" />
@@ -127,7 +127,7 @@ export function RestockItemModal({ open, onOpenChange, onSuccess, item }: Restoc
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
           {/* Current Item Information */}
           <Card>
             <CardHeader>
@@ -137,7 +137,7 @@ export function RestockItemModal({ open, onOpenChange, onSuccess, item }: Restoc
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-sm">
                 <div>
                   <span className="text-muted-foreground">Product:</span>
                   <div className="font-medium">{item.name}</div>
@@ -265,7 +265,7 @@ export function RestockItemModal({ open, onOpenChange, onSuccess, item }: Restoc
             <CardTitle className="text-lg">Restock Summary</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
               <div className="text-center p-4 bg-muted/50 rounded-lg">
                 <div className="text-sm text-muted-foreground">Current Stock</div>
                 <div className="text-2xl font-bold text-destructive">{item.currentStock}</div>
@@ -299,14 +299,14 @@ export function RestockItemModal({ open, onOpenChange, onSuccess, item }: Restoc
           </CardContent>
         </Card>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
+        <DialogFooter className="flex flex-col gap-2 sm:flex-row sm:justify-end sm:space-x-2">
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting} className="w-full sm:w-auto">
             Cancel
           </Button>
-          <Button 
-            onClick={handleSubmit} 
+          <Button
+            onClick={handleSubmit}
             disabled={isSubmitting || !restockData.quantity || !restockData.supplier.trim()}
-            className="bg-warning hover:bg-warning/90"
+            className="bg-warning hover:bg-warning/90 w-full sm:w-auto"
           >
             <Package className="h-4 w-4 mr-2" />
             {isSubmitting ? 'Restocking...' : 'Restock Item'}

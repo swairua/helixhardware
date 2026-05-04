@@ -129,10 +129,10 @@ export function ViewInventoryItemModal({ open, onOpenChange, item, onEdit, onRes
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-[95vw] sm:max-w-2xl md:max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
+          <DialogTitle className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
               <Package className="h-6 w-6 text-primary" />
               <div>
                 <div className="flex items-center space-x-2">
@@ -147,13 +147,13 @@ export function ViewInventoryItemModal({ open, onOpenChange, item, onEdit, onRes
               </div>
             </div>
 
-            <div className="flex space-x-2">
-              <Button variant="outline" size="sm" onClick={onEdit}>
+            <div className="flex flex-col gap-2 sm:flex-row sm:space-x-2 w-full sm:w-auto">
+              <Button variant="outline" size="sm" onClick={onEdit} className="w-full sm:w-auto">
                 <Edit className="h-4 w-4 mr-2" />
                 Edit
               </Button>
               {normalizedItem.status === 'low_stock' && (
-                <Button size="sm" onClick={onRestock} className="bg-warning hover:bg-warning/90">
+                <Button size="sm" onClick={onRestock} className="bg-warning hover:bg-warning/90 w-full sm:w-auto">
                   <Package className="h-4 w-4 mr-2" />
                   Restock
                 </Button>
@@ -165,7 +165,7 @@ export function ViewInventoryItemModal({ open, onOpenChange, item, onEdit, onRes
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
           {/* Product Information */}
           <Card>
             <CardHeader>
@@ -175,7 +175,7 @@ export function ViewInventoryItemModal({ open, onOpenChange, item, onEdit, onRes
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-sm">
                 <div>
                   <span className="text-muted-foreground">Product Code:</span>
                   <div className="font-medium flex items-center space-x-2">
@@ -240,7 +240,7 @@ export function ViewInventoryItemModal({ open, onOpenChange, item, onEdit, onRes
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="grid grid-cols-2 gap-2 sm:gap-4 text-sm">
                   <div>
                     <span className="text-muted-foreground">Min Level:</span>
                     <div className="font-medium">{normalizedItem.minStock}</div>
@@ -265,7 +265,7 @@ export function ViewInventoryItemModal({ open, onOpenChange, item, onEdit, onRes
 
               {/* Pricing */}
               <div className="border-t pt-4 space-y-3">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   {normalizedItem.costPrice && parseFloat(normalizedItem.costPrice) > 0 && (
                     <div>
                       <span className="text-muted-foreground text-sm">Cost Price:</span>
@@ -323,7 +323,7 @@ export function ViewInventoryItemModal({ open, onOpenChange, item, onEdit, onRes
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
               <div className="text-center p-4 bg-muted/50 rounded-lg">
                 <div className="text-2xl font-bold text-primary">{normalizedItem.currentStock}</div>
                 <div className="text-sm text-muted-foreground">Current Stock</div>
@@ -415,21 +415,21 @@ export function ViewInventoryItemModal({ open, onOpenChange, item, onEdit, onRes
           </CardContent>
         </Card>
 
-        <DialogFooter className="flex justify-between">
-          <div className="flex space-x-2">
+        <DialogFooter className="flex flex-col gap-2 sm:flex-row sm:justify-between">
+          <div className="w-full sm:w-auto">
             {normalizedItem.status === 'low_stock' && (
-              <Button variant="outline" onClick={onRestock} className="bg-warning-light text-warning border-warning/20">
+              <Button variant="outline" onClick={onRestock} className="bg-warning-light text-warning border-warning/20 w-full sm:w-auto">
                 <Package className="h-4 w-4 mr-2" />
                 Restock Item
               </Button>
             )}
           </div>
 
-          <div className="flex space-x-2">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <div className="flex flex-col gap-2 sm:flex-row sm:space-x-2 w-full sm:w-auto">
+            <Button variant="outline" onClick={() => onOpenChange(false)} className="w-full sm:w-auto">
               Close
             </Button>
-            <Button onClick={onEdit}>
+            <Button onClick={onEdit} className="w-full sm:w-auto">
               <Edit className="h-4 w-4 mr-2" />
               Edit Item
             </Button>

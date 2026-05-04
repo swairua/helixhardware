@@ -380,19 +380,19 @@ export default function Inventory() {
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Products</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Products</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">
             Manage stock levels and product items
           </p>
         </div>
-        <div className="flex items-center space-x-3">
-          <Button variant="outline" onClick={() => handleStockAdjustment()} disabled={!canEdit('inventory')}>
+        <div className="flex flex-col w-full sm:w-auto sm:flex-row items-stretch sm:items-center gap-2 sm:space-x-3">
+          <Button variant="outline" onClick={() => handleStockAdjustment()} disabled={!canEdit('inventory')} className="w-full sm:w-auto">
             <Package className="h-4 w-4 mr-2" />
             Stock Adjustment
           </Button>
-          <Button className="gradient-primary text-primary-foreground hover:opacity-90 shadow-card" size="lg" onClick={handleAddItem} disabled={!canCreate('inventory')}>
+          <Button className="gradient-primary text-primary-foreground hover:opacity-90 shadow-card w-full sm:w-auto" size="lg" onClick={handleAddItem} disabled={!canCreate('inventory')}>
             <Plus className="h-4 w-4 mr-2" />
             Add Item
           </Button>
@@ -400,7 +400,7 @@ export default function Inventory() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-3 sm:gap-4 grid-cols-2 sm:grid-cols-4">
         <Card className="shadow-card">
           <CardContent className="pt-6">
             <div className="flex items-center space-x-2">
@@ -453,8 +453,8 @@ export default function Inventory() {
       {/* Filters and Search */}
       <Card className="shadow-card">
         <CardContent className="pt-6">
-          <div className="flex items-center space-x-4">
-            <div className="relative flex-1 max-w-md">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-stretch sm:items-center">
+            <div className="relative flex-1 w-full sm:max-w-md">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder="Search inventory..."
@@ -463,126 +463,242 @@ export default function Inventory() {
                 className="pl-10"
               />
             </div>
-            <Button variant="outline">
+            <Button variant="outline" className="w-full sm:w-auto">
               <Filter className="h-4 w-4" />
-              Filter
+              <span className="sm:inline">Filter</span>
             </Button>
           </div>
         </CardContent>
       </Card>
 
-      {/* Product Table */}
-      <Card className="shadow-card">
+      {/* Product Table - Responsive with mobile card view */}
+      <Card className="shadow-card overflow-x-auto">
         <CardHeader>
           <CardTitle>Product Items</CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Product Code</TableHead>
-                <TableHead>Product Name</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead>Current Stock</TableHead>
-                <TableHead>Min Stock</TableHead>
-                <TableHead>Unit Price</TableHead>
-                <TableHead>Total Value</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredInventory.length === 0 ? (
+          {/* Desktop Table View */}
+          <div className="hidden sm:block overflow-x-auto">
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center py-8">
-                    <div className="flex flex-col items-center space-y-2">
-                      <Package className="h-12 w-12 text-muted-foreground" />
-                      <p className="text-muted-foreground">
-                        {searchTerm ? 'No products found matching your search.' : 'No products in inventory yet.'}
-                      </p>
-                      {!searchTerm && (
-                        <Button onClick={handleAddItem} className="mt-2">
-                          <Plus className="h-4 w-4 mr-2" />
-                          Add Your First Product
-                        </Button>
-                      )}
-                    </div>
-                  </TableCell>
+                  <TableHead className="hidden lg:table-cell">Product Code</TableHead>
+                  <TableHead>Product Name</TableHead>
+                  <TableHead className="hidden lg:table-cell">Category</TableHead>
+                  <TableHead>Current Stock</TableHead>
+                  <TableHead className="hidden md:table-cell">Min Stock</TableHead>
+                  <TableHead className="hidden md:table-cell">Unit Price</TableHead>
+                  <TableHead className="hidden xl:table-cell">Total Value</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
-              ) : (
-                filteredInventory.map((item) => (
-                  <TableRow key={item.id} className="hover:bg-muted/50">
-                    <TableCell className="font-medium">{item.product_code}</TableCell>
-                    <TableCell className="font-medium">{item.name}</TableCell>
-                    <TableCell>{item.product_categories?.name || '-'}</TableCell>
-                    <TableCell className={`font-semibold ${(item.stock_quantity || 0) <= (item.minimum_stock_level || 0) ? 'text-warning' : 'text-foreground'}`}>
-                      {item.stock_quantity || 0}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">{item.minimum_stock_level || 0}</TableCell>
-                    <TableCell>{formatCurrency(item.selling_price || 0)}</TableCell>
-                    <TableCell className="font-semibold text-success">{formatCurrency((item.stock_quantity || 0) * (item.selling_price || 0))}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className={getStatusColor(item.status || 'out_of_stock')}>
-                        {(item.status || 'out_of_stock').replace('_', ' ')}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end space-x-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleViewItem(item)}
-                          title="View item details"
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleEditItem(item)}
-                          title="Edit item"
-                          disabled={!canEdit('inventory')}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleStockAdjustment(item)}
-                          title="Stock Adjustment"
-                          disabled={!canEdit('inventory')}
-                        >
-                          <TrendingUp className="h-4 w-4 text-primary" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDeleteItem(item)}
-                          title="Delete item"
-                          disabled={!canEdit('inventory')}
-                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                        {item.status === 'low_stock' && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleRestockItem(item)}
-                            disabled={!canEdit('inventory')}
-                            className="bg-warning-light text-warning border-warning/20 hover:bg-warning hover:text-warning-foreground ml-2"
-                          >
-                            <Package className="h-4 w-4 mr-1" />
-                            Restock
+              </TableHeader>
+              <TableBody>
+                {filteredInventory.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={9} className="text-center py-8">
+                      <div className="flex flex-col items-center space-y-2">
+                        <Package className="h-12 w-12 text-muted-foreground" />
+                        <p className="text-muted-foreground">
+                          {searchTerm ? 'No products found matching your search.' : 'No products in inventory yet.'}
+                        </p>
+                        {!searchTerm && (
+                          <Button onClick={handleAddItem} className="mt-2">
+                            <Plus className="h-4 w-4 mr-2" />
+                            Add Your First Product
                           </Button>
                         )}
                       </div>
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                ) : (
+                  filteredInventory.map((item) => (
+                    <TableRow key={item.id} className="hover:bg-muted/50">
+                      <TableCell className="font-medium hidden lg:table-cell">{item.product_code}</TableCell>
+                      <TableCell className="font-medium">{item.name}</TableCell>
+                      <TableCell className="hidden lg:table-cell">{item.product_categories?.name || '-'}</TableCell>
+                      <TableCell className={`font-semibold ${(item.stock_quantity || 0) <= (item.minimum_stock_level || 0) ? 'text-warning' : 'text-foreground'}`}>
+                        {item.stock_quantity || 0}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground hidden md:table-cell">{item.minimum_stock_level || 0}</TableCell>
+                      <TableCell className="hidden md:table-cell">{formatCurrency(item.selling_price || 0)}</TableCell>
+                      <TableCell className="font-semibold text-success hidden xl:table-cell">{formatCurrency((item.stock_quantity || 0) * (item.selling_price || 0))}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className={getStatusColor(item.status || 'out_of_stock')}>
+                          {(item.status || 'out_of_stock').replace('_', ' ')}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-1 flex-wrap">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleViewItem(item)}
+                            title="View item details"
+                            className="h-8 w-8"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleEditItem(item)}
+                            title="Edit item"
+                            disabled={!canEdit('inventory')}
+                            className="h-8 w-8"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleStockAdjustment(item)}
+                            title="Stock Adjustment"
+                            disabled={!canEdit('inventory')}
+                            className="h-8 w-8"
+                          >
+                            <TrendingUp className="h-4 w-4 text-primary" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDeleteItem(item)}
+                            title="Delete item"
+                            disabled={!canEdit('inventory')}
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8 w-8"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                          {item.status === 'low_stock' && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleRestockItem(item)}
+                              disabled={!canEdit('inventory')}
+                              className="bg-warning-light text-warning border-warning/20 hover:bg-warning hover:text-warning-foreground text-xs hidden md:inline-flex"
+                            >
+                              <Package className="h-3 w-3 mr-1" />
+                              Restock
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+
+          {/* Mobile Card View */}
+          <div className="sm:hidden space-y-3">
+            {filteredInventory.length === 0 ? (
+              <div className="flex flex-col items-center space-y-2 py-8">
+                <Package className="h-12 w-12 text-muted-foreground" />
+                <p className="text-muted-foreground text-sm">
+                  {searchTerm ? 'No products found matching your search.' : 'No products in inventory yet.'}
+                </p>
+                {!searchTerm && (
+                  <Button onClick={handleAddItem} className="mt-2 w-full">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Your First Product
+                  </Button>
+                )}
+              </div>
+            ) : (
+              filteredInventory.map((item) => (
+                <Card key={item.id} className="border">
+                  <CardContent className="pt-4 space-y-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-foreground">{item.name}</h3>
+                        <p className="text-xs text-muted-foreground">{item.product_code}</p>
+                      </div>
+                      <Badge variant="outline" className={getStatusColor(item.status || 'out_of_stock')}>
+                        {(item.status || 'out_of_stock').replace('_', ' ')}
+                      </Badge>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div>
+                        <p className="text-muted-foreground text-xs">Stock</p>
+                        <p className={`font-semibold ${(item.stock_quantity || 0) <= (item.minimum_stock_level || 0) ? 'text-warning' : 'text-foreground'}`}>
+                          {item.stock_quantity || 0}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground text-xs">Unit Price</p>
+                        <p className="font-semibold">{formatCurrency(item.selling_price || 0)}</p>
+                      </div>
+                    </div>
+
+                    {item.product_categories?.name && (
+                      <div className="text-xs">
+                        <p className="text-muted-foreground">Category: {item.product_categories.name}</p>
+                      </div>
+                    )}
+
+                    <div className="flex gap-2 pt-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleViewItem(item)}
+                        className="flex-1"
+                      >
+                        <Eye className="h-3 w-3 mr-1" />
+                        View
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEditItem(item)}
+                        disabled={!canEdit('inventory')}
+                        className="flex-1"
+                      >
+                        <Edit className="h-3 w-3 mr-1" />
+                        Edit
+                      </Button>
+                      {item.status === 'low_stock' && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleRestockItem(item)}
+                          disabled={!canEdit('inventory')}
+                          className="flex-1 bg-warning-light text-warning border-warning/20"
+                        >
+                          <Package className="h-3 w-3 mr-1" />
+                          Restock
+                        </Button>
+                      )}
+                    </div>
+
+                    <div className="flex gap-2 pt-2 border-t">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleStockAdjustment(item)}
+                        disabled={!canEdit('inventory')}
+                        className="flex-1 text-xs h-8"
+                      >
+                        <TrendingUp className="h-3 w-3 mr-1 text-primary" />
+                        Adjust Stock
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteItem(item)}
+                        disabled={!canEdit('inventory')}
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10 flex-1 text-xs h-8"
+                      >
+                        <Trash2 className="h-3 w-3 mr-1" />
+                        Delete
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </div>
         </CardContent>
       </Card>
 

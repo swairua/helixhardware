@@ -583,7 +583,7 @@ export const generatePDF = (data: DocumentData, downloadAsFile: boolean = true) 
           documentNumber: data.number,
           documentDate: formatDate(data.date),
           customer: data.customer,
-          relatedDocument: data.due_date ? {
+          relatedDocument: data.due_date && data.type !== 'invoice' ? {
             label: data.type === 'lpo' ? 'Expected Delivery' : 'Due Date',
             value: formatDate(data.due_date)
           } : undefined,

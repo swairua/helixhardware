@@ -321,7 +321,7 @@ export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-[95vw] sm:max-w-2xl md:max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Edit className="h-5 w-5" />
@@ -338,7 +338,7 @@ export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: 
           <span className="font-mono font-semibold">{productId || 'NOT SET'}</span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="name">Product Name *</Label>
@@ -442,7 +442,7 @@ export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: 
           </div>
 
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="cost_price">Cost Price</Label>
                 <Input
@@ -482,30 +482,28 @@ export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: 
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="reorder_level">Reorder Level (Minimum Stock)</Label>
-                <Input
-                  id="reorder_level"
-                  type="number"
-                  value={formData.reorder_level}
-                  onChange={(e) => handleInputChange('reorder_level', e.target.value)}
-                  placeholder="10"
-                  min="0"
-                />
-                <p className="text-xs text-muted-foreground">
-                  You'll be notified when stock falls below this level
-                </p>
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="reorder_level">Reorder Level (Minimum Stock)</Label>
+              <Input
+                id="reorder_level"
+                type="number"
+                value={formData.reorder_level}
+                onChange={(e) => handleInputChange('reorder_level', e.target.value)}
+                placeholder="10"
+                min="0"
+              />
+              <p className="text-xs text-muted-foreground">
+                You'll be notified when stock falls below this level
+              </p>
             </div>
           </div>
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={handleClose} disabled={isSubmitting}>
+        <DialogFooter className="flex flex-col gap-2 sm:flex-row sm:justify-end sm:space-x-2">
+          <Button variant="outline" onClick={handleClose} disabled={isSubmitting} className="w-full sm:w-auto">
             Cancel
           </Button>
-          <Button onClick={handleSubmit} disabled={isSubmitting}>
+          <Button onClick={handleSubmit} disabled={isSubmitting} className="w-full sm:w-auto">
             {isSubmitting ? 'Updating...' : 'Update Item'}
           </Button>
         </DialogFooter>

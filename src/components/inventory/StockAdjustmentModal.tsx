@@ -189,7 +189,7 @@ export function StockAdjustmentModal({ open, onOpenChange, onSuccess, item }: St
               <CardTitle className="text-lg">Current Stock Information</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
                   <Label className="text-sm text-muted-foreground">Product Name</Label>
                   <p className="font-medium">{item.name}</p>
@@ -300,7 +300,7 @@ export function StockAdjustmentModal({ open, onOpenChange, onSuccess, item }: St
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-3 gap-4 text-center">
+                <div className="grid grid-cols-3 gap-2 sm:gap-4 text-center">
                   <div>
                     <Label className="text-sm text-muted-foreground">Current Stock</Label>
                     <p className="text-lg font-medium">{item.stock_quantity}</p>
@@ -329,14 +329,14 @@ export function StockAdjustmentModal({ open, onOpenChange, onSuccess, item }: St
           )}
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={handleClose} disabled={isSubmitting}>
+        <DialogFooter className="flex flex-col gap-2 sm:flex-row sm:justify-end sm:space-x-2">
+          <Button variant="outline" onClick={handleClose} disabled={isSubmitting} className="w-full sm:w-auto">
             Cancel
           </Button>
           <Button
             onClick={handleSubmit}
             disabled={isSubmitting || (Number(quantity) <= 0 && adjustmentType !== 'set') || !reason}
-            className="min-w-[120px]"
+            className="w-full sm:w-auto"
           >
             {isSubmitting ? 'Processing...' : 'Apply Adjustment'}
           </Button>

@@ -261,7 +261,7 @@ export function AddInventoryItemModal({ open, onOpenChange, onSuccess }: AddInve
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-[95vw] sm:max-w-2xl md:max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center space-x-2">
             <Package className="h-5 w-5 text-primary" />
@@ -272,7 +272,7 @@ export function AddInventoryItemModal({ open, onOpenChange, onSuccess }: AddInve
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
           <Card>
             <CardHeader>
               <CardTitle className="text-lg flex items-center space-x-2">
@@ -291,7 +291,7 @@ export function AddInventoryItemModal({ open, onOpenChange, onSuccess }: AddInve
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="sku">SKU (Product Code)</Label>
                   <div className="relative">
@@ -309,6 +309,7 @@ export function AddInventoryItemModal({ open, onOpenChange, onSuccess }: AddInve
                     variant="outline"
                     size="sm"
                     onClick={() => handleInputChange('sku', generateProductCode())}
+                    className="w-full"
                   >
                     Generate Code
                   </Button>
@@ -405,7 +406,7 @@ export function AddInventoryItemModal({ open, onOpenChange, onSuccess }: AddInve
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="cost_price">Cost Price (KES)</Label>
                   <Input
@@ -486,13 +487,14 @@ export function AddInventoryItemModal({ open, onOpenChange, onSuccess }: AddInve
           </Card>
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
+        <DialogFooter className="flex flex-col gap-2 sm:flex-row sm:justify-end sm:space-x-2">
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting} className="w-full sm:w-auto">
             Cancel
           </Button>
           <Button
             onClick={handleSubmit}
             disabled={isSubmitting || !formData.name.trim() || Number(formData.unit_price) <= 0 || !formData.unit_of_measure}
+            className="w-full sm:w-auto"
           >
             <Package className="h-4 w-4 mr-2" />
             {isSubmitting ? 'Adding...' : 'Add Product'}

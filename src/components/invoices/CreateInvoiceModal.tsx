@@ -53,24 +53,36 @@ interface InvoiceItem {
   line_total: number;
 }
 
+interface TransportFinancePreFill {
+  customer_name?: string;
+  customer_id?: string;
+  date?: string;
+  selling_price?: number;
+  vehicle_number?: string;
+  materials?: string;
+  id?: string;
+}
+
 interface CreateInvoiceModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
   preSelectedCustomer?: any;
+  transportFinanceData?: TransportFinancePreFill;
 }
 
-export function CreateInvoiceModal({ open, onOpenChange, onSuccess, preSelectedCustomer }: CreateInvoiceModalProps) {
+export function CreateInvoiceModal({ open, onOpenChange, onSuccess, preSelectedCustomer, transportFinanceData }: CreateInvoiceModalProps) {
   const [selectedCustomerId, setSelectedCustomerId] = useState(preSelectedCustomer?.id || '');
   const [invoiceDate, setInvoiceDate] = useState(new Date().toISOString().split('T')[0]);
   const [dueDate, setDueDate] = useState(
     new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
   );
   const [lpoNumber, setLpoNumber] = useState('');
-  const [notes, setNotes] = useState('');
+  const [notes, setNotes] = useState(transportFinanceData ? `Trip Reference: ${transportFinanceData.id}\nVehicle: ${transportFinanceData.vehicle_number}\nMaterial: ${transportFinanceData.materials}` : '');
   const [displayAsPercentage, setDisplayAsPercentage] = useState(false);
 
   const [items, setItems] = useState<InvoiceItem[]>([]);
+  const [isInitialized, setIsInitialized] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitProgress, setSubmitProgress] = useState<{
     step: string;
@@ -106,12 +118,96 @@ export function CreateInvoiceModal({ open, onOpenChange, onSuccess, preSelectedC
   const defaultTax = taxSettings?.find(tax => tax.is_default && tax.is_active);
   const defaultTaxRate = defaultTax?.rate || 16; // Fallback to 16% if no default is set
 
-  // Handle pre-selected customer
+  // Handle pre-selected customer or transport finance data
   useEffect(() => {
-    if (preSelectedCustomer && open) {
-      setSelectedCustomerId(preSelectedCustomer.id);
+    if (open && !isInitialized) {
+      if (transportFinanceData) {
+        // Pre-fill from transport finance data
+        if (transportFinanceData.date) {
+          setInvoiceDate(transportFinanceData.date);
+        }
+
+        // Try to find customer by name if available
+        if (transportFinanceData.customer_name && customers && customers.length > 0) {
+          const customerName = transportFinanceData.customer_name.toLowerCase().trim();
+
+          // Try exact match first
+          let matchingCustomer = customers.find(
+            c => c.name.toLowerCase().trim() === customerName
+          );
+
+          // If no exact match, try case-insensitive exact match
+          if (!matchingCustomer) {
+            matchingCustomer = customers.find(
+              c => c.name.toLowerCase() === customerName
+            );
+          }
+
+          // If still no match, try partial match (first name or contains)
+          if (!matchingCustomer) {
+            const firstWord = customerName.split(' ')[0];
+            matchingCustomer = customers.find(
+              c => c.name.toLowerCase().includes(customerName) ||
+                   c.name.toLowerCase().startsWith(firstWord) ||
+                   customerName.includes(c.name.toLowerCase().split(' ')[0])
+            );
+          }
+
+          if (matchingCustomer) {
+            console.log('✓ Found matching customer:', matchingCustomer.name, 'ID:', matchingCustomer.id);
+            setSelectedCustomerId(String(matchingCustomer.id));
+          } else {
+            console.log('⚠ No matching customer found for:', transportFinanceData.customer_name);
+            console.log('Available customers:', customers.map(c => ({ name: c.name, id: c.id })));
+          }
+        } else {
+          console.log('⚠ Missing customer name or customers list:', {
+            customerName: transportFinanceData.customer_name,
+            customersCount: customers?.length
+          });
+        }
+
+        // Auto-populate items from transport finance data
+        if (transportFinanceData.materials && transportFinanceData.selling_price) {
+          const invoiceItem: InvoiceItem = {
+            id: `trip-${transportFinanceData.id}`,
+            product_id: `trip-${transportFinanceData.id}`,
+            product_name: transportFinanceData.materials,
+            description: `Trip: ${transportFinanceData.vehicle_number} - ${transportFinanceData.materials}`,
+            quantity: 1,
+            unit_price: transportFinanceData.selling_price,
+            discount_before_vat: 0,
+            tax_percentage: 0,
+            tax_amount: 0,
+            tax_inclusive: false,
+            line_total: transportFinanceData.selling_price
+          };
+
+          setItems([invoiceItem]);
+          console.log('Auto-populated invoice item from trip:', invoiceItem);
+        }
+
+        setIsInitialized(true);
+      } else if (preSelectedCustomer) {
+        setSelectedCustomerId(preSelectedCustomer.id);
+        setIsInitialized(true);
+      } else if (!transportFinanceData && !preSelectedCustomer) {
+        setIsInitialized(true);
+      }
     }
-  }, [preSelectedCustomer, open]);
+
+    // Reset initialization when modal closes
+    if (!open) {
+      setIsInitialized(false);
+    }
+  }, [transportFinanceData, open, customers, preSelectedCustomer, isInitialized]);
+
+  // Debug: Log when customers load
+  useEffect(() => {
+    if (customers && customers.length > 0) {
+      console.log('✓ Customers loaded:', customers.map(c => ({ id: c.id, name: c.name })));
+    }
+  }, [customers]);
 
   // Handle customer creation success
   const handleCustomerCreated = (customer: any) => {
@@ -579,6 +675,7 @@ export function CreateInvoiceModal({ open, onOpenChange, onSuccess, preSelectedC
     setPaymentAmount('');
     setPaymentMethod('cash');
     setDocumentType('invoice');
+    setIsInitialized(false);
   };
 
   return (
@@ -590,7 +687,7 @@ export function CreateInvoiceModal({ open, onOpenChange, onSuccess, preSelectedC
               {documentType === 'invoice' ? (
                 <>
                   <FileText className="h-5 w-5 text-primary" />
-                  <span>Create New Invoice</span>
+                  <span>{transportFinanceData ? 'Create Invoice from Trip' : 'Create New Invoice'}</span>
                 </>
               ) : (
                 <>
@@ -620,7 +717,9 @@ export function CreateInvoiceModal({ open, onOpenChange, onSuccess, preSelectedC
           </div>
           <DialogDescription>
             {documentType === 'invoice'
-              ? 'Create a detailed invoice with multiple items for your customer'
+              ? transportFinanceData
+                ? `Create an invoice from trip reference: ${transportFinanceData.vehicle_number} - ${transportFinanceData.materials}`
+                : 'Create a detailed invoice with multiple items for your customer'
               : 'Create a direct receipt with payment collection'
             }
           </DialogDescription>

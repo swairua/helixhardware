@@ -82,6 +82,7 @@ export function CreateInvoiceModal({ open, onOpenChange, onSuccess, preSelectedC
   const [displayAsPercentage, setDisplayAsPercentage] = useState(false);
 
   const [items, setItems] = useState<InvoiceItem[]>([]);
+  const [isInitialized, setIsInitialized] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitProgress, setSubmitProgress] = useState<{
     step: string;
@@ -119,7 +120,7 @@ export function CreateInvoiceModal({ open, onOpenChange, onSuccess, preSelectedC
 
   // Handle pre-selected customer or transport finance data
   useEffect(() => {
-    if (open) {
+    if (open && !isInitialized) {
       if (transportFinanceData) {
         // Pre-fill from transport finance data
         if (transportFinanceData.date) {
@@ -149,11 +150,41 @@ export function CreateInvoiceModal({ open, onOpenChange, onSuccess, preSelectedC
             console.log('No matching customer found for:', transportFinanceData.customer_name, 'Available:', customers.map(c => c.name));
           }
         }
+
+        // Auto-populate items from transport finance data
+        if (transportFinanceData.materials && transportFinanceData.selling_price) {
+          const invoiceItem: InvoiceItem = {
+            id: `trip-${transportFinanceData.id}`,
+            product_id: `trip-${transportFinanceData.id}`,
+            product_name: transportFinanceData.materials,
+            description: `Trip: ${transportFinanceData.vehicle_number} - ${transportFinanceData.materials}`,
+            quantity: 1,
+            unit_price: transportFinanceData.selling_price,
+            discount_before_vat: 0,
+            tax_percentage: 0,
+            tax_amount: 0,
+            tax_inclusive: false,
+            line_total: transportFinanceData.selling_price
+          };
+
+          setItems([invoiceItem]);
+          console.log('Auto-populated invoice item from trip:', invoiceItem);
+        }
+
+        setIsInitialized(true);
       } else if (preSelectedCustomer) {
         setSelectedCustomerId(preSelectedCustomer.id);
+        setIsInitialized(true);
+      } else if (!transportFinanceData && !preSelectedCustomer) {
+        setIsInitialized(true);
       }
     }
-  }, [preSelectedCustomer, transportFinanceData, open, customers]);
+
+    // Reset initialization when modal closes
+    if (!open) {
+      setIsInitialized(false);
+    }
+  }, [transportFinanceData, open, customers, preSelectedCustomer, isInitialized]);
 
   // Handle customer creation success
   const handleCustomerCreated = (customer: any) => {
@@ -621,6 +652,7 @@ export function CreateInvoiceModal({ open, onOpenChange, onSuccess, preSelectedC
     setPaymentAmount('');
     setPaymentMethod('cash');
     setDocumentType('invoice');
+    setIsInitialized(false);
   };
 
   return (

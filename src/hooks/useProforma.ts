@@ -505,6 +505,7 @@ export const useConvertProformaToInvoice = () => {
         subtotal: proforma.subtotal,
         tax_amount: proforma.tax_amount,
         total_amount: proforma.total_amount,
+        display_as_percentage: proforma.display_as_percentage,
         created_by: createdBy
       };
 

@@ -64,6 +64,7 @@ export const CreateProformaModal = ({
     proforma_date: new Date().toISOString().split('T')[0],
     valid_until: '',
     notes: '',
+    display_as_percentage: false,
   });
 
   const [items, setItems] = useState<ProformaItem[]>([]);
@@ -238,6 +239,7 @@ export const CreateProformaModal = ({
         subtotal: totals.subtotal,
         tax_amount: totals.totalTax,
         total_amount: totals.total,
+        display_as_percentage: formData.display_as_percentage,
         notes: formData.notes,
       };
 
@@ -544,6 +546,18 @@ export const CreateProformaModal = ({
                 placeholder="Internal notes..."
                 rows={3}
               />
+            </div>
+
+            {/* Display as Percentage Toggle */}
+            <div className="flex items-center space-x-2 pt-2 border-t">
+              <Checkbox
+                id="display_as_percentage"
+                checked={formData.display_as_percentage}
+                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, display_as_percentage: checked as boolean }))}
+              />
+              <Label htmlFor="display_as_percentage" className="cursor-pointer font-normal">
+                Display as progressive percentages (PDF will show calculated amounts instead)
+              </Label>
             </div>
           </div>
 

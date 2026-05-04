@@ -193,7 +193,7 @@ export const generatePDF = (data: DocumentData, downloadAsFile: boolean = true) 
   const templateName = data.pdfTemplate || (company as any)?.pdf_template || 'default';
 
   // Analyze which columns have values
-  const visibleColumns = analyzeColumns(data.items);
+  const visibleColumns = analyzeColumns(data.items, data.display_as_percentage);
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-KE', {
       style: 'currency',
@@ -1132,6 +1132,7 @@ export const downloadInvoicePDF = async (invoice: any, documentType: 'INVOICE' |
     lpo_number: invoice.lpo_number,
     invoice_number: docType === 'receipt' ? invoice.invoice_number : undefined, // Pass invoice_number for receipts
     pdfTemplate: 'helix_general_hardware', // Use the full-width header template
+    display_as_percentage: invoice.display_as_percentage,
     company: company, // Pass company details
     customer: {
       name: invoice.customers?.name || 'Unknown Customer',
@@ -1177,6 +1178,7 @@ export const downloadQuotationPDF = async (quotation: any, company?: CompanyDeta
     number: quotation.quotation_number,
     date: quotation.quotation_date,
     valid_until: quotation.valid_until,
+    display_as_percentage: quotation.display_as_percentage,
     company: company, // Pass company details
     customer: {
       name: quotation.customers?.name || 'Unknown Customer',

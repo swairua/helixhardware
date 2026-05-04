@@ -58,7 +58,8 @@ export function CreateQuotationModal({ open, onOpenChange, onSuccess }: CreateQu
     new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
   );
   const [notes, setNotes] = useState('');
-  
+  const [displayAsPercentage, setDisplayAsPercentage] = useState(false);
+
   const [items, setItems] = useState<QuotationItem[]>([]);
   const [searchProduct, setSearchProduct] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -279,6 +280,7 @@ export function CreateQuotationModal({ open, onOpenChange, onSuccess }: CreateQu
         subtotal: subtotal,
         tax_amount: taxAmount,
         total_amount: totalAmount,
+        display_as_percentage: displayAsPercentage,
         notes: notes,
         created_by: profile.id
       };
@@ -383,6 +385,7 @@ export function CreateQuotationModal({ open, onOpenChange, onSuccess }: CreateQu
     setQuotationDate(new Date().toISOString().split('T')[0]);
     setValidUntil(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
     setNotes('');
+    setDisplayAsPercentage(false);
     setItems([]);
     setSearchProduct('');
   };
@@ -466,6 +469,18 @@ export function CreateQuotationModal({ open, onOpenChange, onSuccess }: CreateQu
                     rows={3}
                     placeholder="Additional notes for this quotation..."
                   />
+                </div>
+
+                {/* Display as Percentage Toggle */}
+                <div className="flex items-center space-x-2 pt-2 border-t">
+                  <Checkbox
+                    id="display_as_percentage"
+                    checked={displayAsPercentage}
+                    onCheckedChange={(checked) => setDisplayAsPercentage(checked as boolean)}
+                  />
+                  <Label htmlFor="display_as_percentage" className="cursor-pointer font-normal">
+                    Display as progressive percentages (PDF will show calculated amounts instead)
+                  </Label>
                 </div>
               </CardContent>
             </Card>

@@ -243,13 +243,6 @@ export function ViewInvoiceModal({
                   </div>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Due Date:</span>
-                  <div className="font-medium flex items-center space-x-2">
-                    <Calendar className="h-4 w-4" />
-                    <span>{formatDate(invoice.due_date)}</span>
-                  </div>
-                </div>
-                <div>
                   <span className="text-muted-foreground">Total Amount:</span>
                   <div className="font-bold text-lg text-primary">
                     {formatCurrency(invoice.total_amount || 0)}

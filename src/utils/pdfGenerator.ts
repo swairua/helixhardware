@@ -849,10 +849,9 @@ export const generatePDF = (data: DocumentData, downloadAsFile: boolean = true) 
       // Receipt format: RECEIPT - {receipt_number}
       return `RECEIPT - ${docNumber}.pdf`;
     } else if (data.type === 'invoice') {
-      // Invoice format: INVOICE - {project_title}
-      // Uses project_title if provided, falls back to customer_name
-      const projectTitle = (data as any).project_title || data.customer.name || docNumber;
-      return `INVOICE - ${projectTitle}`.replace(/\//g, '-').concat('.pdf');
+      // Invoice format: INVOICE - {customer_name}
+      const customerName = data.customer.name || docNumber;
+      return `INVOICE - ${customerName}`.replace(/\//g, '-').concat('.pdf');
     } else if (data.type === 'proforma') {
       return `PROFORMA - ${docNumber}.pdf`;
     } else if (data.type === 'quotation') {

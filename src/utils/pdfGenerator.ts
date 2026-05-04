@@ -23,6 +23,7 @@ export interface DocumentData {
   lpo_number?: string;
   invoice_number?: string; // For receipts to show related invoice
   pdfTemplate?: TemplateName; // PDF template to use (default, helix, compact, etc.)
+  display_as_percentage?: boolean; // When true, display calculated amounts instead of percentages
   customer: {
     name: string;
     email?: string;
@@ -103,7 +104,8 @@ const DEFAULT_COMPANY: CompanyDetails = {
 };
 
 // Helper function to determine which columns have values
-const analyzeColumns = (items: DocumentData['items']) => {
+// When display_as_percentage is true, hide percentage columns and only show calculated amounts
+const analyzeColumns = (items: DocumentData['items'], displayAsPercentage?: boolean) => {
   if (!items || items.length === 0) return {};
 
   const columns = {
@@ -114,23 +116,40 @@ const analyzeColumns = (items: DocumentData['items']) => {
     taxAmount: false,
   };
 
-  items.forEach(item => {
-    if (item.discount_percentage && item.discount_percentage > 0) {
-      columns.discountPercentage = true;
-    }
-    if (item.discount_before_vat && item.discount_before_vat > 0) {
-      columns.discountBeforeVat = true;
-    }
-    if (item.discount_amount && item.discount_amount > 0) {
-      columns.discountAmount = true;
-    }
-    if (item.tax_percentage && item.tax_percentage > 0) {
-      columns.taxPercentage = true;
-    }
-    if (item.tax_amount && item.tax_amount > 0) {
-      columns.taxAmount = true;
-    }
-  });
+  // If display_as_percentage is true, exclude percentage columns
+  // and only show calculated amount columns
+  if (displayAsPercentage) {
+    items.forEach(item => {
+      if (item.discount_before_vat && item.discount_before_vat > 0) {
+        columns.discountBeforeVat = true;
+      }
+      if (item.discount_amount && item.discount_amount > 0) {
+        columns.discountAmount = true;
+      }
+      if (item.tax_amount && item.tax_amount > 0) {
+        columns.taxAmount = true;
+      }
+    });
+  } else {
+    // Standard behavior: show whichever columns have data
+    items.forEach(item => {
+      if (item.discount_percentage && item.discount_percentage > 0) {
+        columns.discountPercentage = true;
+      }
+      if (item.discount_before_vat && item.discount_before_vat > 0) {
+        columns.discountBeforeVat = true;
+      }
+      if (item.discount_amount && item.discount_amount > 0) {
+        columns.discountAmount = true;
+      }
+      if (item.tax_percentage && item.tax_percentage > 0) {
+        columns.taxPercentage = true;
+      }
+      if (item.tax_amount && item.tax_amount > 0) {
+        columns.taxAmount = true;
+      }
+    });
+  }
 
   return columns;
 };

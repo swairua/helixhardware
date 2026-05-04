@@ -842,16 +842,29 @@ export const generatePDF = (data: DocumentData, downloadAsFile: boolean = true) 
 
   // Generate filename based on document type and number
   const generateFilename = () => {
-    const date = new Date().toISOString().split('T')[0];
-    const docNumber = data.number.replace(/\//g, '-');
-    const typeLabel = data.type === 'proforma' ? 'PROFORMA' :
-                      data.type === 'delivery' ? 'DELIVERY' :
-                      data.type === 'statement' ? 'STATEMENT' :
-                      data.type === 'receipt' ? 'RECEIPT' :
-                      data.type === 'remittance' ? 'REMITTANCE' :
-                      data.type === 'lpo' ? 'LPO' :
-                      data.type.toUpperCase();
-    return `${typeLabel}_${docNumber}_${date}.pdf`;
+    const docNumber = data.number.replace(/\//g, '-').replace(/\s+/g, ' ');
+
+    if (data.type === 'receipt') {
+      // Receipt format: RECEIPT - {receipt_number}
+      return `RECEIPT - ${docNumber}.pdf`;
+    } else if (data.type === 'invoice') {
+      // Invoice format: INVOICE - {invoice_number}
+      return `INVOICE - ${docNumber}.pdf`;
+    } else if (data.type === 'proforma') {
+      return `PROFORMA - ${docNumber}.pdf`;
+    } else if (data.type === 'quotation') {
+      return `QUOTATION - ${docNumber}.pdf`;
+    } else if (data.type === 'delivery') {
+      return `DELIVERY - ${docNumber}.pdf`;
+    } else if (data.type === 'statement') {
+      return `STATEMENT - ${docNumber}.pdf`;
+    } else if (data.type === 'remittance') {
+      return `REMITTANCE - ${docNumber}.pdf`;
+    } else if (data.type === 'lpo') {
+      return `LPO - ${docNumber}.pdf`;
+    } else {
+      return `${data.type.toUpperCase()} - ${docNumber}.pdf`;
+    }
   };
 
   if (downloadAsFile) {

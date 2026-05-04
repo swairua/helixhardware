@@ -24,6 +24,7 @@ export interface DocumentData {
   invoice_number?: string; // For receipts to show related invoice
   pdfTemplate?: TemplateName; // PDF template to use (default, helix, compact, etc.)
   display_as_percentage?: boolean; // When true, display calculated amounts instead of percentages
+  project_title?: string; // Project title for document naming
   customer: {
     name: string;
     email?: string;
@@ -848,9 +849,9 @@ export const generatePDF = (data: DocumentData, downloadAsFile: boolean = true) 
       // Receipt format: RECEIPT - {receipt_number}
       return `RECEIPT - ${docNumber}.pdf`;
     } else if (data.type === 'invoice') {
-      // Invoice format: INVOICE - {project_title} or {customer_name} as fallback
-      // Note: project_title should be passed in data if available from quotation
-      const projectTitle = (data as any).project_title || (data as any).project_description || data.customer.name || docNumber;
+      // Invoice format: INVOICE - {project_title}
+      // Uses project_title if provided, falls back to customer_name
+      const projectTitle = (data as any).project_title || data.customer.name || docNumber;
       return `INVOICE - ${projectTitle}`.replace(/\//g, '-').concat('.pdf');
     } else if (data.type === 'proforma') {
       return `PROFORMA - ${docNumber}.pdf`;
@@ -1047,7 +1048,7 @@ export const generatePaymentReceiptPDF = async (payment: any, company?: CompanyD
 // Specific function for invoice PDF generation
 // For receipts: The caller (DirectReceipts.tsx) should have already populated invoice.invoice_items
 // with receipt_items (snapshot) if available, otherwise with invoice_items or payment_allocations
-export const downloadInvoicePDF = async (invoice: any, documentType: 'INVOICE' | 'PROFORMA' | 'RECEIPT' = 'INVOICE', company?: CompanyDetails) => {
+export const downloadInvoicePDF = async (invoice: any, documentType: 'INVOICE' | 'PROFORMA' | 'RECEIPT' = 'INVOICE', company?: CompanyDetails, projectTitle?: string) => {
   let docType: 'proforma' | 'invoice' | 'receipt' = 'invoice';
 
   if (documentType === 'PROFORMA') {
@@ -1166,6 +1167,7 @@ export const downloadInvoicePDF = async (invoice: any, documentType: 'INVOICE' |
     notes: invoice.notes,
     terms_and_conditions: invoice.terms_and_conditions,
     percentage_breakdown: percentageBreakdown.length > 0 ? percentageBreakdown : undefined,
+    project_title: projectTitle, // Pass project title for invoice naming
   };
 
   console.log('✅ PDF Document Data - Customer:', {

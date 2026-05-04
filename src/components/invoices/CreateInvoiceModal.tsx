@@ -78,7 +78,7 @@ export function CreateInvoiceModal({ open, onOpenChange, onSuccess, preSelectedC
     new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
   );
   const [lpoNumber, setLpoNumber] = useState('');
-  const [notes, setNotes] = useState('');
+  const [notes, setNotes] = useState(transportFinanceData ? `Trip Reference: ${transportFinanceData.id}\nVehicle: ${transportFinanceData.vehicle_number}\nMaterial: ${transportFinanceData.materials}` : '');
   const [displayAsPercentage, setDisplayAsPercentage] = useState(false);
 
   const [items, setItems] = useState<InvoiceItem[]>([]);
@@ -127,12 +127,26 @@ export function CreateInvoiceModal({ open, onOpenChange, onSuccess, preSelectedC
         }
 
         // Try to find customer by name if available
-        if (transportFinanceData.customer_name && customers) {
-          const matchingCustomer = customers.find(
-            c => c.name.toLowerCase() === transportFinanceData.customer_name?.toLowerCase()
+        if (transportFinanceData.customer_name && customers && customers.length > 0) {
+          const customerName = transportFinanceData.customer_name.toLowerCase().trim();
+
+          // Try exact match first
+          let matchingCustomer = customers.find(
+            c => c.name.toLowerCase().trim() === customerName
           );
+
+          // If no exact match, try partial match (contains)
+          if (!matchingCustomer) {
+            matchingCustomer = customers.find(
+              c => c.name.toLowerCase().includes(customerName) || customerName.includes(c.name.toLowerCase())
+            );
+          }
+
           if (matchingCustomer) {
+            console.log('Found matching customer:', matchingCustomer.name);
             setSelectedCustomerId(String(matchingCustomer.id));
+          } else {
+            console.log('No matching customer found for:', transportFinanceData.customer_name, 'Available:', customers.map(c => c.name));
           }
         }
       } else if (preSelectedCustomer) {

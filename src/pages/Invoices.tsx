@@ -352,7 +352,16 @@ export default function Invoices() {
         hasItems: enrichedInvoice.invoice_items?.length > 0
       });
 
-      await downloadInvoicePDF(enrichedInvoice, 'INVOICE', companyDetails);
+      // Fetch project title from quotation if invoice is linked to one
+      let projectTitle: string | undefined;
+      if ((enrichedInvoice as any).quotation_id) {
+        const quotationResult = await db.selectOne('quotations', (enrichedInvoice as any).quotation_id);
+        if (!quotationResult.error && quotationResult.data) {
+          projectTitle = (quotationResult.data as any).project_description || (quotationResult.data as any).project_title;
+        }
+      }
+
+      await downloadInvoicePDF(enrichedInvoice, 'INVOICE', companyDetails, projectTitle);
       toast.success(`PDF download started for ${invoice.invoice_number}`);
     } catch (error) {
       console.error('Error downloading PDF:', error);

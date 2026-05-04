@@ -848,8 +848,10 @@ export const generatePDF = (data: DocumentData, downloadAsFile: boolean = true) 
       // Receipt format: RECEIPT - {receipt_number}
       return `RECEIPT - ${docNumber}.pdf`;
     } else if (data.type === 'invoice') {
-      // Invoice format: INVOICE - {invoice_number}
-      return `INVOICE - ${docNumber}.pdf`;
+      // Invoice format: INVOICE - {project_title} or {customer_name} as fallback
+      // Note: project_title should be passed in data if available from quotation
+      const projectTitle = (data as any).project_title || (data as any).project_description || data.customer.name || docNumber;
+      return `INVOICE - ${projectTitle}`.replace(/\//g, '-').concat('.pdf');
     } else if (data.type === 'proforma') {
       return `PROFORMA - ${docNumber}.pdf`;
     } else if (data.type === 'quotation') {

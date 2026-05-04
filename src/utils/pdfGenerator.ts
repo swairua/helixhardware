@@ -69,6 +69,12 @@ export interface DocumentData {
   tracking_number?: string;
   delivered_by?: string;
   received_by?: string;
+  // Invoice terms - percentage breakdown
+  percentage_breakdown?: Array<{
+    label: string;
+    value: string | number;
+  }>;
+  terms_and_conditions?: string;
 }
 
 // Company details interface
@@ -141,7 +147,20 @@ export const generatePDF = (data: DocumentData, downloadAsFile: boolean = true) 
     return num.replace(/([A-Z]+)[-\s][0-9]{4}-/, '$1-');
   };
 
+  // Apply document number formatting based on type
   data.number = stripYear(data.number) || data.number;
+
+  // Add prefixes for receipts and invoices
+  if (data.type === 'receipt') {
+    // Receipt: format as "RECEIPT- <number>"
+    const baseNumber = data.number.replace(/^(PAY\s*-\s*)?RECEIPT\s*-\s*/, '');
+    data.number = `RECEIPT- ${baseNumber}`;
+  } else if (data.type === 'invoice') {
+    // Invoice: format as "INVOICE- <number>"
+    const baseNumber = data.number.replace(/^INVOICE\s*-\s*/, '');
+    data.number = `INVOICE- ${baseNumber}`;
+  }
+
   if (data.invoice_number) {
     data.invoice_number = stripYear(data.invoice_number);
   }
@@ -765,7 +784,33 @@ export const generatePDF = (data: DocumentData, downloadAsFile: boolean = true) 
         </div>
         ` : ''}
 
+        <!-- Notes/Terms Section -->
+        ${(data.notes || data.terms_and_conditions || data.percentage_breakdown) && data.type !== 'delivery' ? `
+        <div class="notes-section">
+          ${data.percentage_breakdown && data.percentage_breakdown.length > 0 ? `
+          <div class="terms">
+            <div class="section-subtitle">BOQ Percentage Breakdown</div>
+            <div class="terms-content">
+              ${data.percentage_breakdown.map(item => `${item.label}: ${item.value}%`).join('\n')}
+            </div>
+          </div>
+          ` : ''}
 
+          ${data.terms_and_conditions ? `
+          <div class="terms">
+            <div class="section-subtitle">Terms & Conditions</div>
+            <div class="terms-content">${data.terms_and_conditions}</div>
+          </div>
+          ` : ''}
+
+          ${data.notes ? `
+          <div class="notes">
+            <div class="section-subtitle">Notes</div>
+            <div class="notes-content">${data.notes}</div>
+          </div>
+          ` : ''}
+        </div>
+        ` : ''}
 
         <!-- Footer -->
         <div class="footer">
@@ -1026,6 +1071,30 @@ export const downloadInvoicePDF = async (invoice: any, documentType: 'INVOICE' |
     };
   });
 
+  // Extract percentage breakdown from invoice items if they have selected/computed percentages
+  const percentageBreakdown: Array<{ label: string; value: string | number }> = [];
+  if (docType === 'invoice' || docType === 'proforma') {
+    const uniquePercentages = new Map<number, string>();
+
+    // Collect all unique tax percentages
+    transformedItems.forEach((item: any) => {
+      if (item.tax_percentage && item.tax_percentage > 0 && !uniquePercentages.has(item.tax_percentage)) {
+        uniquePercentages.set(item.tax_percentage, `Tax`);
+      }
+      if (item.discount_percentage && item.discount_percentage > 0 && !uniquePercentages.has(item.discount_percentage)) {
+        uniquePercentages.set(item.discount_percentage, `Discount`);
+      }
+    });
+
+    // Add percentages to breakdown if they exist
+    uniquePercentages.forEach((label, percentage) => {
+      percentageBreakdown.push({
+        label: `${label} ${percentage}%`,
+        value: percentage
+      });
+    });
+  }
+
   // Log customer data for debugging
   console.log('📄 PDF Generation - Customer Data Debug:', {
     invoiceNumber: invoice.invoice_number,
@@ -1060,6 +1129,8 @@ export const downloadInvoicePDF = async (invoice: any, documentType: 'INVOICE' |
     paid_amount: invoice.paid_amount || 0,
     balance_due: invoice.balance_due || (invoice.total_amount ? invoice.total_amount - (invoice.paid_amount || 0) : 0),
     notes: invoice.notes,
+    terms_and_conditions: invoice.terms_and_conditions,
+    percentage_breakdown: percentageBreakdown.length > 0 ? percentageBreakdown : undefined,
   };
 
   console.log('✅ PDF Document Data - Customer:', {

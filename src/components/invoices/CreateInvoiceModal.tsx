@@ -136,19 +136,35 @@ export function CreateInvoiceModal({ open, onOpenChange, onSuccess, preSelectedC
             c => c.name.toLowerCase().trim() === customerName
           );
 
-          // If no exact match, try partial match (contains)
+          // If no exact match, try case-insensitive exact match
           if (!matchingCustomer) {
             matchingCustomer = customers.find(
-              c => c.name.toLowerCase().includes(customerName) || customerName.includes(c.name.toLowerCase())
+              c => c.name.toLowerCase() === customerName
+            );
+          }
+
+          // If still no match, try partial match (first name or contains)
+          if (!matchingCustomer) {
+            const firstWord = customerName.split(' ')[0];
+            matchingCustomer = customers.find(
+              c => c.name.toLowerCase().includes(customerName) ||
+                   c.name.toLowerCase().startsWith(firstWord) ||
+                   customerName.includes(c.name.toLowerCase().split(' ')[0])
             );
           }
 
           if (matchingCustomer) {
-            console.log('Found matching customer:', matchingCustomer.name);
+            console.log('✓ Found matching customer:', matchingCustomer.name, 'ID:', matchingCustomer.id);
             setSelectedCustomerId(String(matchingCustomer.id));
           } else {
-            console.log('No matching customer found for:', transportFinanceData.customer_name, 'Available:', customers.map(c => c.name));
+            console.log('⚠ No matching customer found for:', transportFinanceData.customer_name);
+            console.log('Available customers:', customers.map(c => ({ name: c.name, id: c.id })));
           }
+        } else {
+          console.log('⚠ Missing customer name or customers list:', {
+            customerName: transportFinanceData.customer_name,
+            customersCount: customers?.length
+          });
         }
 
         // Auto-populate items from transport finance data
@@ -185,6 +201,13 @@ export function CreateInvoiceModal({ open, onOpenChange, onSuccess, preSelectedC
       setIsInitialized(false);
     }
   }, [transportFinanceData, open, customers, preSelectedCustomer, isInitialized]);
+
+  // Debug: Log when customers load
+  useEffect(() => {
+    if (customers && customers.length > 0) {
+      console.log('✓ Customers loaded:', customers.map(c => ({ id: c.id, name: c.name })));
+    }
+  }, [customers]);
 
   // Handle customer creation success
   const handleCustomerCreated = (customer: any) => {

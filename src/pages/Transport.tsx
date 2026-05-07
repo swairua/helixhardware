@@ -25,7 +25,8 @@ import {
   DollarSign,
   AlertCircle,
   Download,
-  FileText
+  FileText,
+  ChevronDown
 } from 'lucide-react';
 import { useCurrentCompany } from '@/contexts/CompanyContext';
 import { toast } from 'sonner';
@@ -62,6 +63,7 @@ import { RecordTripPaymentModal } from '@/components/transport/RecordTripPayment
 import { CreateInvoiceModal } from '@/components/invoices/CreateInvoiceModal';
 import { CreatePaymentModal } from '@/components/transport/CreatePaymentModal';
 import { EditPaymentModal } from '@/components/transport/EditPaymentModal';
+import { generateAuditReport, AuditReport, AuditIssue } from '@/utils/financeAudit';
 
 interface Driver {
   id: string;
@@ -154,6 +156,11 @@ export default function Transport({ initialTab = 'drivers' }: TransportProps) {
   const [selectedPaymentForEdit, setSelectedPaymentForEdit] = useState<any>(null);
   const [showEditPaymentModal, setShowEditPaymentModal] = useState(false);
 
+  // Audit state
+  const [auditReport, setAuditReport] = useState<AuditReport | null>(null);
+  const [showAuditDetails, setShowAuditDetails] = useState(false);
+  const [recordsWithIssues, setRecordsWithIssues] = useState<Set<string>>(new Set());
+
   const { currentCompany, isLoading: isCompanyLoading } = useCurrentCompany();
   const DEFAULT_COMPANY_ID = '550e8400-e29b-41d4-a716-446655440000';
   const activeCompanyId = currentCompany?.id || DEFAULT_COMPANY_ID;
@@ -231,6 +238,22 @@ export default function Transport({ initialTab = 'drivers' }: TransportProps) {
       };
     }) || [];
   }, [finances, vehicles, materials]);
+
+  // Generate audit report
+  useMemo(() => {
+    if (enrichedFinances.length > 0) {
+      const report = generateAuditReport(
+        enrichedFinances,
+        payments || [],
+        vehicles || [],
+        materials || []
+      );
+      setAuditReport(report);
+
+      const issueRecordIds = new Set(report.issues.map(issue => issue.recordId));
+      setRecordsWithIssues(issueRecordIds);
+    }
+  }, [enrichedFinances, payments, vehicles, materials]);
 
   const filteredFinances = enrichedFinances.filter(finance =>
     finance.vehicle_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -692,6 +715,16 @@ export default function Transport({ initialTab = 'drivers' }: TransportProps) {
               />
             </div>
             <div className="flex gap-2 ml-2">
+              {auditReport && auditReport.issuesFound > 0 && (
+                <Button
+                  variant="outline"
+                  onClick={() => setShowAuditDetails(!showAuditDetails)}
+                  className="text-amber-600 hover:text-amber-700"
+                >
+                  <AlertCircle className="h-4 w-4 mr-2" />
+                  Audit Issues ({auditReport.issuesFound})
+                </Button>
+              )}
               <Button variant="outline" onClick={handleExportFinance}>
                 <Download className="h-4 w-4 mr-2" />
                 Export
@@ -713,6 +746,110 @@ export default function Transport({ initialTab = 'drivers' }: TransportProps) {
                   <AlertCircle className="h-4 w-4" />
                   Failed to load trips. <Button variant="link" size="sm" onClick={() => retryFinances()}>Retry</Button>
                 </div>
+              )}
+
+              {/* Data Quality Dashboard */}
+              {!isFinancesLoading && auditReport && (
+                <Card className="mb-4 border-blue-200 bg-blue-50">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-blue-900 text-base">Data Quality Summary</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="grid grid-cols-2 gap-4 text-sm md:grid-cols-4 lg:grid-cols-5">
+                      <div className="bg-white p-3 rounded border border-blue-200">
+                        <p className="text-blue-600 font-bold text-lg">{auditReport.totalRecords}</p>
+                        <p className="text-blue-700 text-xs mt-1">Total Records</p>
+                      </div>
+                      <div className="bg-white p-3 rounded border border-blue-200">
+                        <p className="text-green-600 font-bold text-lg">{auditReport.totalRecords - auditReport.issuesFound}</p>
+                        <p className="text-blue-700 text-xs mt-1">Valid Records</p>
+                      </div>
+                      <div className={`p-3 rounded border ${auditReport.issuesFound > 0 ? 'bg-amber-50 border-amber-200' : 'bg-white border-blue-200'}`}>
+                        <p className={`${auditReport.issuesFound > 0 ? 'text-amber-600' : 'text-green-600'} font-bold text-lg`}>{auditReport.issuesFound}</p>
+                        <p className="text-blue-700 text-xs mt-1">Issues Found</p>
+                      </div>
+                      <div className="bg-white p-3 rounded border border-blue-200">
+                        <p className="text-purple-600 font-bold text-lg">
+                          {payments && finances ? Math.round((payments.length / finances.length) * 100) : 0}%
+                        </p>
+                        <p className="text-blue-700 text-xs mt-1">Payment Coverage</p>
+                      </div>
+                      <div className="bg-white p-3 rounded border border-blue-200">
+                        <p className={`font-bold text-lg ${!auditReport.issuesFound ? 'text-green-600' : 'text-amber-600'}`}>
+                          {!auditReport.issuesFound ? '✓ Pass' : '⚠ Review'}
+                        </p>
+                        <p className="text-blue-700 text-xs mt-1">Status</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Audit Results Panel */}
+              {!isFinancesLoading && auditReport && auditReport.issuesFound > 0 && (
+                <Card className="mb-4 border-amber-200 bg-amber-50">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-start gap-2">
+                        <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5" />
+                        <div>
+                          <CardTitle className="text-amber-900">Data Audit Results</CardTitle>
+                          <p className="text-sm text-amber-800 mt-1">
+                            {auditReport.issuesFound} issue{auditReport.issuesFound !== 1 ? 's' : ''} found in {auditReport.totalRecords} record{auditReport.totalRecords !== 1 ? 's' : ''}
+                          </p>
+                        </div>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setShowAuditDetails(!showAuditDetails)}
+                        className="text-amber-600 hover:text-amber-700"
+                      >
+                        {showAuditDetails ? 'Hide' : 'View'} Details
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  {showAuditDetails && (
+                    <CardContent className="space-y-3">
+                      <div className="grid grid-cols-2 gap-4 text-sm md:grid-cols-5">
+                        <div>
+                          <p className="text-amber-600 font-semibold">{auditReport.summary.profitCalculationErrors}</p>
+                          <p className="text-amber-800 text-xs">Calculation Errors</p>
+                        </div>
+                        <div>
+                          <p className="text-amber-600 font-semibold">{auditReport.summary.paymentStatusMismatches}</p>
+                          <p className="text-amber-800 text-xs">Payment Mismatches</p>
+                        </div>
+                        <div>
+                          <p className="text-amber-600 font-semibold">{auditReport.summary.missingReferences}</p>
+                          <p className="text-amber-800 text-xs">Missing References</p>
+                        </div>
+                        <div>
+                          <p className="text-amber-600 font-semibold">{auditReport.summary.nullFieldErrors}</p>
+                          <p className="text-amber-800 text-xs">Null Fields</p>
+                        </div>
+                        <div>
+                          <p className="text-amber-600 font-semibold">{auditReport.summary.duplicateErrors}</p>
+                          <p className="text-amber-800 text-xs">Duplicates</p>
+                        </div>
+                      </div>
+                      {auditReport.issues.length > 0 && (
+                        <div className="mt-4 space-y-2 max-h-48 overflow-y-auto">
+                          <p className="text-sm font-medium text-amber-900">Issues:</p>
+                          {auditReport.issues.slice(0, 5).map((issue, idx) => (
+                            <div key={idx} className="text-xs p-2 bg-white rounded border border-amber-100">
+                              <p className="font-medium text-amber-900">{issue.type.replace(/_/g, ' ')}</p>
+                              <p className="text-amber-800">{issue.message}</p>
+                            </div>
+                          ))}
+                          {auditReport.issues.length > 5 && (
+                            <p className="text-xs text-amber-700">+ {auditReport.issues.length - 5} more issues</p>
+                          )}
+                        </div>
+                      )}
+                    </CardContent>
+                  )}
+                </Card>
               )}
 
               {isFinancesLoading ? (
@@ -748,9 +885,16 @@ export default function Transport({ initialTab = 'drivers' }: TransportProps) {
                           </TableCell>
                         </TableRow>
                       ) : (
-                        filteredFinances.map((finance) => (
-                          <TableRow key={finance.id}>
-                            <TableCell className="text-sm">{finance.date || '-'}</TableCell>
+                        filteredFinances.map((finance) => {
+                          const hasIssues = recordsWithIssues.has(finance.id);
+                          return (
+                          <TableRow key={finance.id} className={hasIssues ? 'bg-amber-50' : ''}>
+                            <TableCell className="text-sm">
+                              <div className="flex items-center gap-2">
+                                {hasIssues && <AlertCircle className="h-4 w-4 text-amber-600" />}
+                                {finance.date || '-'}
+                              </div>
+                            </TableCell>
                             <TableCell className="font-medium">{finance.vehicle_number || '-'}</TableCell>
                             <TableCell>{finance.materials || '-'}</TableCell>
                             <TableCell className="text-right">{(finance.buying_price || 0).toLocaleString()}</TableCell>
@@ -817,7 +961,8 @@ export default function Transport({ initialTab = 'drivers' }: TransportProps) {
                               </div>
                             </TableCell>
                           </TableRow>
-                        ))
+                        );
+                        })
                       )}
                     </TableBody>
                   </Table>

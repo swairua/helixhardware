@@ -1072,9 +1072,9 @@ export default function Transport({ initialTab = 'drivers' }: TransportProps) {
                           const relatedFinance = finances?.find(f => f.id === payment.trip_id);
                           return (
                             <TableRow key={payment.id}>
-                              <TableCell>{new Date(payment.date || Date.now()).toLocaleDateString()}</TableCell>
+                              <TableCell>{new Date(payment.payment_date || payment.date || Date.now()).toLocaleDateString()}</TableCell>
                               <TableCell>{payment.vehicle_number || '-'}</TableCell>
-                              <TableCell className="text-right font-medium">{(payment.amount || 0).toLocaleString()}</TableCell>
+                              <TableCell className="text-right font-medium">{(payment.payment_amount || payment.amount || 0).toLocaleString()}</TableCell>
                               <TableCell>{payment.payment_method || '-'}</TableCell>
                               <TableCell>
                                 <Badge

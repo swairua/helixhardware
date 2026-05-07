@@ -66,7 +66,8 @@ export function RecordTripPaymentModal({
   }, [payments]);
 
   const balance = useMemo(() => {
-    return (trip?.selling_price || 0) - totalPaid;
+    const price = Number(trip?.selling_price) || 0;
+    return Math.max(0, price - totalPaid);
   }, [trip?.selling_price, totalPaid]);
 
   const paymentAmount = parseFloat(formData.payment_amount) || 0;
@@ -178,7 +179,7 @@ export function RecordTripPaymentModal({
                 value={formData.payment_amount}
                 onChange={(e) => setFormData({ ...formData, payment_amount: e.target.value })}
                 disabled={balance <= 0}
-                max={balance}
+                max={isNaN(balance) ? undefined : balance}
               />
             </div>
 

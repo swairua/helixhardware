@@ -44,7 +44,7 @@ set_exception_handler(function($exception) {
 
     try {
         if (!headers_sent()) {
-            ob_clean();
+            ob_end_clean();
             http_response_code(500);
             header('Content-Type: application/json; charset=utf-8');
         }
@@ -82,7 +82,7 @@ register_shutdown_function(function() {
         try {
             // Clear any buffered output to ensure clean JSON response
             if (!headers_sent()) {
-                ob_clean();
+                ob_end_clean();
                 http_response_code(500);
                 header('Content-Type: application/json; charset=utf-8');
             }
@@ -2645,6 +2645,7 @@ try {
                     }
 
                     // Update invoice with recalculated values
+                    $new_status = $conn->real_escape_string($new_status);
                     $update_invoice_sql = "UPDATE invoices SET
                         status = '$new_status',
                         paid_amount = $paid_amount,
@@ -2675,7 +2676,7 @@ try {
 
             // Return success response - MUST ensure JSON is output
             if (!headers_sent()) {
-                ob_clean();
+                ob_end_clean();
                 http_response_code(200);
                 header('Content-Type: application/json; charset=utf-8');
             }
@@ -2732,7 +2733,7 @@ try {
             try {
                 // Only clear output if we haven't sent headers yet
                 if (!headers_sent()) {
-                    ob_clean();
+                    ob_end_clean();
                     http_response_code(400);
                     header('Content-Type: application/json; charset=utf-8');
                 }
@@ -2782,7 +2783,7 @@ try {
     try {
         // Only clear output and set headers if they haven't been sent
         if (!headers_sent()) {
-            ob_clean();
+            ob_end_clean();
             header('Content-Type: application/json; charset=utf-8');
         }
 

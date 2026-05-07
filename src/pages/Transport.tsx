@@ -1074,7 +1074,13 @@ export default function Transport({ initialTab = 'drivers' }: TransportProps) {
                             <TableRow key={payment.id}>
                               <TableCell>{new Date(payment.payment_date || payment.date || Date.now()).toLocaleDateString()}</TableCell>
                               <TableCell>{payment.vehicle_number || '-'}</TableCell>
-                              <TableCell className="text-right font-medium">{(payment.payment_amount || payment.amount || 0).toLocaleString()}</TableCell>
+                              <TableCell className="text-right font-medium">
+                                {(payment.payment_amount !== undefined && payment.payment_amount !== null)
+                                  ? payment.payment_amount.toLocaleString()
+                                  : (payment.amount !== undefined && payment.amount !== null)
+                                  ? payment.amount.toLocaleString()
+                                  : '-'}
+                              </TableCell>
                               <TableCell>{payment.payment_method || '-'}</TableCell>
                               <TableCell>
                                 <Badge

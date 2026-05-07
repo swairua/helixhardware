@@ -2277,7 +2277,7 @@ export function useUpdateTransportPayment() {
     mutationFn: async (formData: { id: string; [key: string]: any }) => {
       const db = getDatabase();
       const { id, ...updateData } = formData;
-      const { data, error } = await db.update('transport_payments', { id }, updateData);
+      const { data, error } = await db.update('transport_payments', id, updateData);
 
       if (error) {
         throw error;

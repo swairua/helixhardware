@@ -292,19 +292,18 @@ export function TransportFinanceModal({
             </CardContent>
           </Card>
 
-          {/* Payment Status */}
+          {/* Payment Status - Auto-set to Unpaid */}
           <div>
             <Label htmlFor="payment_status">Payment Status</Label>
-            <Select value={formData.payment_status} onValueChange={(value) => setFormData({ ...formData, payment_status: value as 'paid' | 'unpaid' | 'pending' })}>
-              <SelectTrigger id="payment_status">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="paid">Paid</SelectItem>
-                <SelectItem value="unpaid">Unpaid</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="flex items-center gap-2">
+              <div className="flex-1 px-3 py-2 border border-input rounded-md bg-muted text-sm">
+                unpaid
+              </div>
+              <span className="text-xs text-muted-foreground">Default</span>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              New records start as unpaid. Payment status is automatically updated when payments are recorded.
+            </p>
           </div>
         </div>
 

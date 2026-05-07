@@ -2251,24 +2251,8 @@ export function useCreateTransportPayment() {
         throw error;
       }
 
-      // Update transport_finance payment_status based on total paid vs selling_price
-      const { data: tripData } = await db.selectOne('transport_finance', { id: formData.trip_id });
-      if (tripData) {
-        const { data: paymentsData } = await db.select('transport_payments', { trip_id: formData.trip_id });
-        const totalPaid = (paymentsData || []).reduce((sum: number, p: any) => sum + (p.payment_amount || 0), 0);
-
-        let newPaymentStatus: 'paid' | 'unpaid' | 'pending' = 'unpaid';
-        if (totalPaid >= (tripData.selling_price || 0)) {
-          newPaymentStatus = 'paid';
-        } else if (totalPaid > 0) {
-          newPaymentStatus = 'pending';
-        }
-
-        // Update trip payment status if it changed
-        if (newPaymentStatus !== tripData.payment_status) {
-          await db.update('transport_finance', { id: formData.trip_id }, { payment_status: newPaymentStatus });
-        }
-      }
+      // Database triggers will automatically synchronize payment_status
+      // based on total paid vs selling_price. No manual update needed.
 
       return data;
     },

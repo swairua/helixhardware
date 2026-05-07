@@ -46,7 +46,9 @@ import {
   useUpdateDriver,
   useUpdateVehicle,
   useUpdateMaterial,
-  useUpdateTransportFinance
+  useUpdateTransportFinance,
+  useCreateTransportPayment,
+  useDeleteTransportPayment
 } from '@/hooks/useTransport';
 import { CreateDriverModal } from '@/components/transport/CreateDriverModal';
 import { EditDriverModal } from '@/components/transport/EditDriverModal';
@@ -58,6 +60,8 @@ import { TransportFinanceModal } from '@/components/transport/TransportFinanceMo
 import { EditTransportFinanceModal } from '@/components/transport/EditTransportFinanceModal';
 import { RecordTripPaymentModal } from '@/components/transport/RecordTripPaymentModal';
 import { CreateInvoiceModal } from '@/components/invoices/CreateInvoiceModal';
+import { CreatePaymentModal } from '@/components/transport/CreatePaymentModal';
+import { EditPaymentModal } from '@/components/transport/EditPaymentModal';
 
 interface Driver {
   id: string;
@@ -104,13 +108,13 @@ interface TransportFinance {
 }
 
 interface TransportProps {
-  initialTab?: 'drivers' | 'vehicles' | 'materials' | 'finance';
+  initialTab?: 'drivers' | 'vehicles' | 'materials' | 'finance' | 'payments';
 }
 
 export default function Transport({ initialTab = 'drivers' }: TransportProps) {
   const location = useLocation();
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeTab, setActiveTab] = useState<'drivers' | 'vehicles' | 'materials' | 'finance'>(initialTab);
+  const [activeTab, setActiveTab] = useState<'drivers' | 'vehicles' | 'materials' | 'finance' | 'payments'>(initialTab);
 
   useEffect(() => {
     setActiveTab(initialTab);
@@ -144,6 +148,12 @@ export default function Transport({ initialTab = 'drivers' }: TransportProps) {
   const [showCreateInvoiceModal, setShowCreateInvoiceModal] = useState(false);
   const [selectedTripForInvoice, setSelectedTripForInvoice] = useState<TransportFinance | null>(null);
 
+  // Payments page state
+  const [paymentStatusFilter, setPaymentStatusFilter] = useState<'all' | 'pending'>('all');
+  const [showCreatePaymentModal, setShowCreatePaymentModal] = useState(false);
+  const [selectedPaymentForEdit, setSelectedPaymentForEdit] = useState<any>(null);
+  const [showEditPaymentModal, setShowEditPaymentModal] = useState(false);
+
   const { currentCompany, isLoading: isCompanyLoading } = useCurrentCompany();
   const DEFAULT_COMPANY_ID = '550e8400-e29b-41d4-a716-446655440000';
   const activeCompanyId = currentCompany?.id || DEFAULT_COMPANY_ID;
@@ -153,11 +163,14 @@ export default function Transport({ initialTab = 'drivers' }: TransportProps) {
   const { data: vehicles, isLoading: isVehiclesLoading, error: vehiclesError, retry: retryVehicles } = useVehicles(activeCompanyId);
   const { data: materials, isLoading: isMaterialsLoading, error: materialsError, retry: retryMaterials } = useMaterials(activeCompanyId);
   const { data: finances, isLoading: isFinancesLoading, error: financesError, retry: retryFinances } = useTransportFinance(activeCompanyId);
-  
+  const { data: payments, isLoading: isPaymentsLoading, error: paymentsError, retry: retryPayments } = useTransportPayments();
+
   const deleteDriver = useDeleteDriver();
   const deleteVehicle = useDeleteVehicle();
   const deleteMaterial = useDeleteMaterial();
   const deleteFinance = useDeleteTransportFinance();
+  const createPayment = useCreateTransportPayment();
+  const deletePayment = useDeleteTransportPayment();
 
   const handleDeleteDriver = async (driverId: string) => {
     try {
@@ -225,6 +238,48 @@ export default function Transport({ initialTab = 'drivers' }: TransportProps) {
     finance.customer_name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const enrichedPayments = useMemo(() => {
+    return payments?.map(payment => {
+      const finance = finances?.find(f => f.id === payment.trip_id);
+      const vehicle = vehicles?.find(v => v.id === finance?.vehicle_id);
+      return {
+        ...payment,
+        vehicle_number: vehicle?.vehicle_number || finance?.vehicle_number,
+        finance_date: finance?.date,
+        customer_name: finance?.customer_name,
+        selling_price: finance?.selling_price
+      };
+    }) || [];
+  }, [payments, finances, vehicles]);
+
+  const filteredPayments = useMemo(() => {
+    let result = enrichedPayments.filter(payment =>
+      payment.vehicle_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      payment.reference_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      payment.customer_name?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    if (paymentStatusFilter === 'pending') {
+      const finance = finances?.find(f => f.id === result[0]?.trip_id);
+      result = result.filter(payment => {
+        const relatedFinance = finances?.find(f => f.id === payment.trip_id);
+        return relatedFinance?.payment_status !== 'paid';
+      });
+    }
+
+    return result;
+  }, [enrichedPayments, searchTerm, paymentStatusFilter, finances]);
+
+  const handleDeletePayment = async (paymentId: string) => {
+    try {
+      await deletePayment.mutateAsync(paymentId);
+      retryPayments();
+      retryFinances();
+    } catch (error) {
+      // Error handling is done in the mutation's onError
+    }
+  };
+
   // Get section title and description based on active tab
   const getSectionInfo = () => {
     switch (activeTab) {
@@ -236,6 +291,8 @@ export default function Transport({ initialTab = 'drivers' }: TransportProps) {
         return { title: 'Materials', description: 'Manage transport materials' };
       case 'finance':
         return { title: 'Finance', description: 'Track transport finance and costs' };
+      case 'payments':
+        return { title: 'Payments', description: 'Review and manage transport payments' };
       default:
         return { title: 'Transport Management', description: 'Manage drivers, vehicles, materials, and transport finances' };
     }
@@ -771,6 +828,155 @@ export default function Transport({ initialTab = 'drivers' }: TransportProps) {
         </div>
       )}
 
+      {/* Payments Tab */}
+      {activeTab === 'payments' && (
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <CardTitle>Transport Payments</CardTitle>
+                <Button
+                  onClick={() => setShowCreatePaymentModal(true)}
+                  className="gap-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  Record Payment
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Search and Filters */}
+              <div className="flex gap-4 items-center flex-wrap">
+                <div className="relative flex-1 min-w-xs">
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search by vehicle, reference, or customer..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant={paymentStatusFilter === 'all' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setPaymentStatusFilter('all')}
+                  >
+                    All Payments
+                  </Button>
+                  <Button
+                    variant={paymentStatusFilter === 'pending' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setPaymentStatusFilter('pending')}
+                  >
+                    Pending Only
+                  </Button>
+                </div>
+              </div>
+
+              {/* Error Banner */}
+              {paymentsError && (
+                <div className="flex items-center justify-between bg-red-50 border border-red-200 p-4 rounded">
+                  <div className="flex items-center gap-2 text-red-700">
+                    <AlertCircle className="h-4 w-4" />
+                    <span>Failed to load payments. Please try again.</span>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => retryPayments()}
+                    className="text-red-600 hover:text-red-700"
+                  >
+                    Retry
+                  </Button>
+                </div>
+              )}
+
+              {/* Payments Table */}
+              {isPaymentsLoading ? (
+                <div className="space-y-2">
+                  {[...Array(5)].map((_, i) => (
+                    <Skeleton key={i} className="h-12 w-full" />
+                  ))}
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Payment Date</TableHead>
+                        <TableHead>Vehicle</TableHead>
+                        <TableHead className="text-right">Amount</TableHead>
+                        <TableHead>Method</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Reference</TableHead>
+                        <TableHead>Customer</TableHead>
+                        <TableHead>Notes</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredPayments.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={9} className="text-center py-4 text-muted-foreground">
+                            No payments found
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        filteredPayments.map((payment) => {
+                          const relatedFinance = finances?.find(f => f.id === payment.trip_id);
+                          return (
+                            <TableRow key={payment.id}>
+                              <TableCell>{new Date(payment.date || Date.now()).toLocaleDateString()}</TableCell>
+                              <TableCell>{payment.vehicle_number || '-'}</TableCell>
+                              <TableCell className="text-right font-medium">{(payment.amount || 0).toLocaleString()}</TableCell>
+                              <TableCell>{payment.payment_method || '-'}</TableCell>
+                              <TableCell>
+                                <Badge
+                                  variant={relatedFinance?.payment_status === 'paid' ? 'default' : 'secondary'}
+                                  className={relatedFinance?.payment_status === 'paid' ? 'bg-green-600' : relatedFinance?.payment_status === 'unpaid' ? 'bg-red-600' : 'bg-yellow-600'}
+                                >
+                                  {relatedFinance?.payment_status || 'unknown'}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>{payment.reference_number || '-'}</TableCell>
+                              <TableCell>{payment.customer_name || '-'}</TableCell>
+                              <TableCell>{payment.notes || '-'}</TableCell>
+                              <TableCell>
+                                <div className="flex gap-2">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                      setSelectedPaymentForEdit(payment);
+                                      setShowEditPaymentModal(true);
+                                    }}
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleDeletePayment(payment.id)}
+                                    className="text-destructive hover:text-destructive"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       {/* Modals */}
       <CreateDriverModal 
         open={showCreateDriverModal} 
@@ -902,6 +1108,31 @@ export default function Transport({ initialTab = 'drivers' }: TransportProps) {
             vehicle_number: selectedTripForInvoice.vehicle_number,
             materials: selectedTripForInvoice.materials,
             id: selectedTripForInvoice.id
+          }}
+        />
+      )}
+
+      <CreatePaymentModal
+        open={showCreatePaymentModal}
+        onOpenChange={setShowCreatePaymentModal}
+        onSuccess={() => {
+          retryPayments();
+          retryFinances();
+          setShowCreatePaymentModal(false);
+        }}
+        companyId={activeCompanyId}
+      />
+
+      {selectedPaymentForEdit && (
+        <EditPaymentModal
+          open={showEditPaymentModal}
+          onOpenChange={setShowEditPaymentModal}
+          payment={selectedPaymentForEdit}
+          onSuccess={() => {
+            retryPayments();
+            retryFinances();
+            setShowEditPaymentModal(false);
+            setSelectedPaymentForEdit(null);
           }}
         />
       )}

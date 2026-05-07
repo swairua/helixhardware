@@ -332,6 +332,14 @@ const App = () => {
                     </ProtectedRoute>
                   }
                 />
+                <Route
+                  path="/app/transport/payments"
+                  element={
+                    <ProtectedRoute requireAuth={true}>
+                      <Transport initialTab="payments" />
+                    </ProtectedRoute>
+                  }
+                />
 
                 {/* Additional Features */}
                 <Route

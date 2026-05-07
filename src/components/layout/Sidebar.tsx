@@ -88,7 +88,8 @@ const sidebarItems: SidebarItem[] = [
       { title: 'Drivers', icon: Users, href: '/app/transport/drivers' },
       { title: 'Vehicles', icon: Truck, href: '/app/transport/vehicles' },
       { title: 'Materials', icon: Package, href: '/app/transport/materials' },
-      { title: 'Finance', icon: DollarSign, href: '/app/transport/finance' }
+      { title: 'Finance', icon: DollarSign, href: '/app/transport/finance' },
+      { title: 'Payments', icon: CreditCard, href: '/app/transport/payments' }
     ]
   },
   {

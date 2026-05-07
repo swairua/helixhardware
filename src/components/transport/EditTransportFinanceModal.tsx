@@ -314,19 +314,19 @@ export function EditTransportFinanceModal({
             </CardContent>
           </Card>
 
-          {/* Payment Status */}
+          {/* Payment Status - Read Only */}
           <div>
             <Label htmlFor="payment_status">Payment Status</Label>
-            <Select value={formData.payment_status} onValueChange={(value) => setFormData({ ...formData, payment_status: value as 'paid' | 'unpaid' | 'pending' })}>
-              <SelectTrigger id="payment_status">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="paid">Paid</SelectItem>
-                <SelectItem value="unpaid">Unpaid</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="flex items-center gap-2">
+              <div className="flex-1 px-3 py-2 border border-input rounded-md bg-muted text-sm">
+                {finance.payment_status}
+              </div>
+              <span className="text-xs text-muted-foreground">Auto-calculated</span>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Payment status is automatically derived from recorded payments and cannot be manually edited.
+              Use the payment recording feature to update this status.
+            </p>
           </div>
         </div>
 

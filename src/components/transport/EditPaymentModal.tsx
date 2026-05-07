@@ -77,13 +77,11 @@ export function EditPaymentModal({
       setIsSubmitting(true);
       await updatePayment.mutateAsync({
         id: payment.id,
-        data: {
-          payment_amount: paymentAmount,
-          payment_date: formData.payment_date,
-          payment_method: formData.payment_method,
-          reference_number: formData.reference_number || undefined,
-          notes: formData.notes || undefined,
-        },
+        payment_amount: paymentAmount,
+        payment_date: formData.payment_date,
+        payment_method: formData.payment_method,
+        reference_number: formData.reference_number || undefined,
+        notes: formData.notes || undefined,
       });
 
       toast.success('Payment updated successfully');

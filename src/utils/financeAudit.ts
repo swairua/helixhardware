@@ -74,27 +74,7 @@ export function validateFinanceRecord(
     });
   }
 
-  // Check 2: Validate payment status consistency
-  // Only validate if this specific trip has related payment records
-  const relatedPayments = payments.filter(p => String(p.trip_id) === String(record.id));
-  if (relatedPayments.length > 0) {
-    const totalPaid = relatedPayments.reduce((sum, p) => sum + ((p.payment_amount || p.amount) || 0), 0);
-    const expectedStatus = totalPaid >= (record.selling_price || 0) ? 'paid' : 'unpaid';
-
-    if (record.payment_status && record.payment_status !== expectedStatus && record.payment_status !== 'pending') {
-      issues.push({
-        recordId: record.id,
-        type: 'payment_status',
-        severity: 'warning',
-        field: 'payment_status',
-        message: `Payment status mismatch: expected '${expectedStatus}' based on payment records, got '${record.payment_status}'`,
-        expectedValue: expectedStatus,
-        actualValue: record.payment_status
-      });
-    }
-  }
-
-  // Check 3: Validate vehicle reference exists
+  // Check 2: Validate vehicle reference exists
   if (record.vehicle_id && !vehicles.some(v => v.id === record.vehicle_id)) {
     issues.push({
       recordId: record.id,

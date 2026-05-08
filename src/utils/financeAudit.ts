@@ -40,8 +40,10 @@ interface TransportPaymentRecord {
   id: string;
   trip_id?: string;
   amount?: number;
+  payment_amount?: number;
   payment_status?: string;
   date?: string;
+  payment_date?: string;
 }
 
 export function validateFinanceRecord(
@@ -73,20 +75,24 @@ export function validateFinanceRecord(
   }
 
   // Check 2: Validate payment status consistency
-  const relatedPayments = payments.filter(p => p.trip_id === record.id);
-  const totalPaid = relatedPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
-  const expectedStatus = totalPaid >= (record.selling_price || 0) ? 'paid' : 'unpaid';
+  // Only validate if we have payment records to compare against
+  // If payments array is empty, don't flag as mismatch since the status reflects no payments recorded yet
+  if (payments.length > 0) {
+    const relatedPayments = payments.filter(p => p.trip_id === record.id);
+    const totalPaid = relatedPayments.reduce((sum, p) => sum + ((p.payment_amount || p.amount) || 0), 0);
+    const expectedStatus = totalPaid >= (record.selling_price || 0) ? 'paid' : 'unpaid';
 
-  if (record.payment_status && record.payment_status !== expectedStatus && record.payment_status !== 'pending') {
-    issues.push({
-      recordId: record.id,
-      type: 'payment_status',
-      severity: 'warning',
-      field: 'payment_status',
-      message: `Payment status mismatch: expected '${expectedStatus}' based on payment records, got '${record.payment_status}'`,
-      expectedValue: expectedStatus,
-      actualValue: record.payment_status
-    });
+    if (record.payment_status && record.payment_status !== expectedStatus && record.payment_status !== 'pending') {
+      issues.push({
+        recordId: record.id,
+        type: 'payment_status',
+        severity: 'warning',
+        field: 'payment_status',
+        message: `Payment status mismatch: expected '${expectedStatus}' based on payment records, got '${record.payment_status}'`,
+        expectedValue: expectedStatus,
+        actualValue: record.payment_status
+      });
+    }
   }
 
   // Check 3: Validate vehicle reference exists

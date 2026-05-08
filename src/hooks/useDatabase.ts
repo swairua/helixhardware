@@ -2204,12 +2204,14 @@ export function useDeleteTransportFinance() {
 }
 
 /**
- * Hook to fetch transport payments for a trip
+ * Hook to fetch transport payments for a trip or all payments if no tripId provided
  */
 export function useTransportPayments(tripId?: string) {
   const filter = useMemo(() => {
-    if (!tripId) return undefined;
-    return { trip_id: tripId };
+    // If tripId is provided, filter by that trip
+    // If not provided, pass null to fetch all transport payments
+    if (tripId) return { trip_id: tripId };
+    return null;
   }, [tripId]);
 
   return useSelect('transport_payments', filter);

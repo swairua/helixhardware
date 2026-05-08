@@ -26,8 +26,20 @@ import {
   AlertCircle,
   Download,
   FileText,
-  ChevronDown
+  ChevronDown,
+  TrendingUp,
+  TrendingDown
 } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { useCurrentCompany } from '@/contexts/CompanyContext';
 import { toast } from 'sonner';
 import {
@@ -123,6 +135,12 @@ export default function Transport({ initialTab = 'drivers' }: TransportProps) {
   useEffect(() => {
     setActiveTab(initialTab);
   }, [initialTab, location.pathname]);
+
+  // Reset pagination when search term changes
+  useEffect(() => {
+    setCurrentFinancePage(1);
+    setCurrentPaymentsPage(1);
+  }, [searchTerm, paymentStatusFilter]);
   
   // Drivers state
   const [showCreateDriverModal, setShowCreateDriverModal] = useState(false);
@@ -162,6 +180,17 @@ export default function Transport({ initialTab = 'drivers' }: TransportProps) {
   const [auditReport, setAuditReport] = useState<AuditReport | null>(null);
   const [showAuditDetails, setShowAuditDetails] = useState(false);
   const [recordsWithIssues, setRecordsWithIssues] = useState<Set<string>>(new Set());
+
+  // Pagination state
+  const [currentFinancePage, setCurrentFinancePage] = useState(1);
+  const [currentPaymentsPage, setCurrentPaymentsPage] = useState(1);
+
+  // Delete confirmation state
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{
+    isOpen: boolean;
+    type: 'finance' | 'payment' | null;
+    id: string | null;
+  }>({ isOpen: false, type: null, id: null });
 
   const { currentCompany, isLoading: isCompanyLoading } = useCurrentCompany();
   const DEFAULT_COMPANY_ID = '550e8400-e29b-41d4-a716-446655440000';
@@ -207,8 +236,13 @@ export default function Transport({ initialTab = 'drivers' }: TransportProps) {
   };
 
   const handleDeleteFinance = async (financeId: string) => {
+    setDeleteConfirmation({ isOpen: true, type: 'finance', id: financeId });
+  };
+
+  const handleConfirmDeleteFinance = async (financeId: string) => {
     try {
       await deleteFinance.mutateAsync(financeId);
+      setDeleteConfirmation({ isOpen: false, type: null, id: null });
     } catch (error) {
       // Error handling is done in the mutation's onError
     }
@@ -341,11 +375,35 @@ export default function Transport({ initialTab = 'drivers' }: TransportProps) {
     return result;
   }, [enrichedPayments, searchTerm, paymentStatusFilter, finances]);
 
+  // Pagination - Finance
+  const ITEMS_PER_PAGE = 10;
+  const financesPageCount = Math.ceil(filteredFinances.length / ITEMS_PER_PAGE);
+  const paginatedFinances = filteredFinances.slice(
+    (currentFinancePage - 1) * ITEMS_PER_PAGE,
+    currentFinancePage * ITEMS_PER_PAGE
+  );
+
+  // Pagination - Payments
+  const paymentsPageCount = Math.ceil(filteredPayments.length / ITEMS_PER_PAGE);
+  const paginatedPayments = filteredPayments.slice(
+    (currentPaymentsPage - 1) * ITEMS_PER_PAGE,
+    currentPaymentsPage * ITEMS_PER_PAGE
+  );
+
+  // Calculate profits summary
+  const totalProfit = enrichedFinances.reduce((sum, finance) => sum + (finance.profit_loss || 0), 0);
+  const averageProfit = enrichedFinances.length > 0 ? totalProfit / enrichedFinances.length : 0;
+
   const handleDeletePayment = async (paymentId: string) => {
+    setDeleteConfirmation({ isOpen: true, type: 'payment', id: paymentId });
+  };
+
+  const handleConfirmDeletePayment = async (paymentId: string) => {
     try {
       await deletePayment.mutateAsync(paymentId);
       retryPayments();
       retryFinances();
+      setDeleteConfirmation({ isOpen: false, type: null, id: null });
     } catch (error) {
       // Error handling is done in the mutation's onError
     }
@@ -823,7 +881,7 @@ export default function Transport({ initialTab = 'drivers' }: TransportProps) {
                     )}
                   </CardHeader>
                   <CardContent className="space-y-3">
-                    <div className="grid grid-cols-2 gap-4 text-sm md:grid-cols-4 lg:grid-cols-5">
+                    <div className="grid grid-cols-2 gap-4 text-sm md:grid-cols-3 lg:grid-cols-6">
                       <div className="bg-white p-3 rounded border border-blue-200">
                         <p className="text-blue-600 font-bold text-lg">{auditReport.totalRecords}</p>
                         <p className="text-blue-700 text-xs mt-1">Total Records</p>
@@ -842,11 +900,31 @@ export default function Transport({ initialTab = 'drivers' }: TransportProps) {
                         </p>
                         <p className="text-blue-700 text-xs mt-1">Payment Coverage</p>
                       </div>
-                      <div className="bg-white p-3 rounded border border-blue-200">
-                        <p className={`font-bold text-lg ${!auditReport.issuesFound ? 'text-green-600' : 'text-amber-600'}`}>
-                          {!auditReport.issuesFound ? '✓ Pass' : '⚠ Review'}
-                        </p>
-                        <p className="text-blue-700 text-xs mt-1">Status</p>
+                      <div className={`p-3 rounded border ${totalProfit >= 0 ? 'bg-white border-blue-200' : 'bg-red-50 border-red-200'}`}>
+                        <div className="flex items-center gap-1">
+                          {totalProfit >= 0 ? (
+                            <TrendingUp className="h-4 w-4 text-green-600" />
+                          ) : (
+                            <TrendingDown className="h-4 w-4 text-red-600" />
+                          )}
+                          <p className={`font-bold text-lg ${totalProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {totalProfit.toLocaleString('en-US', { maximumFractionDigits: 0 })}
+                          </p>
+                        </div>
+                        <p className="text-blue-700 text-xs mt-1">Total Profit</p>
+                      </div>
+                      <div className={`p-3 rounded border ${averageProfit >= 0 ? 'bg-white border-blue-200' : 'bg-red-50 border-red-200'}`}>
+                        <div className="flex items-center gap-1">
+                          {averageProfit >= 0 ? (
+                            <TrendingUp className="h-4 w-4 text-green-600" />
+                          ) : (
+                            <TrendingDown className="h-4 w-4 text-red-600" />
+                          )}
+                          <p className={`font-bold text-lg ${averageProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {averageProfit.toLocaleString('en-US', { maximumFractionDigits: 0 })}
+                          </p>
+                        </div>
+                        <p className="text-blue-700 text-xs mt-1">Avg Profit</p>
                       </div>
                     </div>
                   </CardContent>
@@ -953,7 +1031,7 @@ export default function Transport({ initialTab = 'drivers' }: TransportProps) {
                           </TableCell>
                         </TableRow>
                       ) : (
-                        filteredFinances.map((finance) => {
+                        paginatedFinances.map((finance) => {
                           const hasIssues = recordsWithIssues.has(finance.id);
                           return (
                           <TableRow key={finance.id} className={hasIssues ? 'bg-amber-50' : ''}>
@@ -1034,6 +1112,36 @@ export default function Transport({ initialTab = 'drivers' }: TransportProps) {
                       )}
                     </TableBody>
                   </Table>
+                </div>
+              )}
+
+              {/* Finance Pagination */}
+              {filteredFinances.length > 0 && (
+                <div className="flex items-center justify-between mt-4">
+                  <p className="text-sm text-muted-foreground">
+                    Showing {Math.min((currentFinancePage - 1) * ITEMS_PER_PAGE + 1, filteredFinances.length)} to {Math.min(currentFinancePage * ITEMS_PER_PAGE, filteredFinances.length)} of {filteredFinances.length} trips
+                  </p>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentFinancePage(Math.max(1, currentFinancePage - 1))}
+                      disabled={currentFinancePage === 1}
+                    >
+                      Previous
+                    </Button>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm">Page {currentFinancePage} of {financesPageCount}</span>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentFinancePage(Math.min(financesPageCount, currentFinancePage + 1))}
+                      disabled={currentFinancePage === financesPageCount || financesPageCount === 0}
+                    >
+                      Next
+                    </Button>
+                  </div>
                 </div>
               )}
             </CardContent>
@@ -1136,7 +1244,7 @@ export default function Transport({ initialTab = 'drivers' }: TransportProps) {
                           </TableCell>
                         </TableRow>
                       ) : (
-                        filteredPayments.map((payment) => {
+                        paginatedPayments.map((payment) => {
                           const relatedFinance = finances?.find(f => f.id === payment.trip_id);
                           return (
                             <TableRow key={payment.id}>
@@ -1189,6 +1297,35 @@ export default function Transport({ initialTab = 'drivers' }: TransportProps) {
                       )}
                     </TableBody>
                   </Table>
+                  {/* Payments Pagination */}
+                  {filteredPayments.length > 0 && (
+                    <div className="flex items-center justify-between mt-4">
+                      <p className="text-sm text-muted-foreground">
+                        Showing {Math.min((currentPaymentsPage - 1) * ITEMS_PER_PAGE + 1, filteredPayments.length)} to {Math.min(currentPaymentsPage * ITEMS_PER_PAGE, filteredPayments.length)} of {filteredPayments.length} payments
+                      </p>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setCurrentPaymentsPage(Math.max(1, currentPaymentsPage - 1))}
+                          disabled={currentPaymentsPage === 1}
+                        >
+                          Previous
+                        </Button>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm">Page {currentPaymentsPage} of {paymentsPageCount}</span>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setCurrentPaymentsPage(Math.min(paymentsPageCount, currentPaymentsPage + 1))}
+                          disabled={currentPaymentsPage === paymentsPageCount || paymentsPageCount === 0}
+                        >
+                          Next
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </CardContent>
@@ -1355,6 +1492,47 @@ export default function Transport({ initialTab = 'drivers' }: TransportProps) {
           }}
         />
       )}
+
+      {/* Delete Confirmation Modal */}
+      <AlertDialog open={deleteConfirmation.isOpen} onOpenChange={(isOpen) => {
+        if (!isOpen) {
+          setDeleteConfirmation({ isOpen: false, type: null, id: null });
+        }
+      }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {deleteConfirmation.type === 'finance' ? 'Delete Trip' : 'Delete Payment'}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleteConfirmation.type === 'finance'
+                ? 'Are you sure you want to delete this trip and all associated data? This action cannot be undone.'
+                : 'Are you sure you want to delete this payment? This action cannot be undone.'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => {
+              setDeleteConfirmation({ isOpen: false, type: null, id: null });
+            }}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive hover:bg-destructive/90"
+              onClick={async () => {
+                if (deleteConfirmation.id) {
+                  if (deleteConfirmation.type === 'finance') {
+                    await handleConfirmDeleteFinance(deleteConfirmation.id);
+                  } else if (deleteConfirmation.type === 'payment') {
+                    await handleConfirmDeletePayment(deleteConfirmation.id);
+                  }
+                }
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

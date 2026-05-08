@@ -809,8 +809,18 @@ export default function Transport({ initialTab = 'drivers' }: TransportProps) {
               {/* Data Quality Dashboard */}
               {!isFinancesLoading && auditReport && (
                 <Card className="mb-4 border-blue-200 bg-blue-50">
-                  <CardHeader className="pb-3">
+                  <CardHeader className="pb-3 flex justify-between items-start">
                     <CardTitle className="text-blue-900 text-base">Data Quality Summary</CardTitle>
+                    {auditReport.issuesFound > 0 && (
+                      <Button
+                        onClick={handleRepairAuditIssues}
+                        disabled={bulkRepair.isPending}
+                        size="sm"
+                        className="bg-green-600 hover:bg-green-700 text-white"
+                      >
+                        {bulkRepair.isPending ? 'Repairing...' : 'Repair All'}
+                      </Button>
+                    )}
                   </CardHeader>
                   <CardContent className="space-y-3">
                     <div className="grid grid-cols-2 gap-4 text-sm md:grid-cols-4 lg:grid-cols-5">

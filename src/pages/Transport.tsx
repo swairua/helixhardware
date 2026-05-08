@@ -132,6 +132,9 @@ export default function Transport({ initialTab = 'drivers' }: TransportProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState<'drivers' | 'vehicles' | 'materials' | 'finance' | 'payments'>(initialTab);
 
+  // Payments page state
+  const [paymentStatusFilter, setPaymentStatusFilter] = useState<'all' | 'pending'>('all');
+
   useEffect(() => {
     setActiveTab(initialTab);
   }, [initialTab, location.pathname]);
@@ -141,22 +144,22 @@ export default function Transport({ initialTab = 'drivers' }: TransportProps) {
     setCurrentFinancePage(1);
     setCurrentPaymentsPage(1);
   }, [searchTerm, paymentStatusFilter]);
-  
+
   // Drivers state
   const [showCreateDriverModal, setShowCreateDriverModal] = useState(false);
   const [showEditDriverModal, setShowEditDriverModal] = useState(false);
   const [selectedDriver, setSelectedDriver] = useState<Driver | null>(null);
-  
+
   // Vehicles state
   const [showCreateVehicleModal, setShowCreateVehicleModal] = useState(false);
   const [showEditVehicleModal, setShowEditVehicleModal] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
-  
+
   // Materials state
   const [showCreateMaterialModal, setShowCreateMaterialModal] = useState(false);
   const [showEditMaterialModal, setShowEditMaterialModal] = useState(false);
   const [selectedMaterial, setSelectedMaterial] = useState<Material | null>(null);
-  
+
   // Finance state
   const [showCreateFinanceModal, setShowCreateFinanceModal] = useState(false);
   const [showEditFinanceModal, setShowEditFinanceModal] = useState(false);
@@ -169,9 +172,6 @@ export default function Transport({ initialTab = 'drivers' }: TransportProps) {
   // Invoice creation state
   const [showCreateInvoiceModal, setShowCreateInvoiceModal] = useState(false);
   const [selectedTripForInvoice, setSelectedTripForInvoice] = useState<TransportFinance | null>(null);
-
-  // Payments page state
-  const [paymentStatusFilter, setPaymentStatusFilter] = useState<'all' | 'pending'>('all');
   const [showCreatePaymentModal, setShowCreatePaymentModal] = useState(false);
   const [selectedPaymentForEdit, setSelectedPaymentForEdit] = useState<any>(null);
   const [showEditPaymentModal, setShowEditPaymentModal] = useState(false);

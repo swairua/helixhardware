@@ -391,8 +391,13 @@ export default function Transport({ initialTab = 'drivers' }: TransportProps) {
   );
 
   // Calculate profits summary
-  const totalProfit = enrichedFinances.reduce((sum, finance) => sum + (finance.profit_loss || 0), 0);
-  const averageProfit = enrichedFinances.length > 0 ? totalProfit / enrichedFinances.length : 0;
+  const totalProfit = enrichedFinances.reduce((sum, finance) => {
+    const profitValue = Number(finance.profit_loss) || 0;
+    return sum + (isFinite(profitValue) ? profitValue : 0);
+  }, 0);
+  const averageProfit = enrichedFinances.length > 0
+    ? (isFinite(totalProfit) ? totalProfit / enrichedFinances.length : 0)
+    : 0;
 
   const handleDeletePayment = async (paymentId: string) => {
     setDeleteConfirmation({ isOpen: true, type: 'payment', id: paymentId });
@@ -881,50 +886,50 @@ export default function Transport({ initialTab = 'drivers' }: TransportProps) {
                     )}
                   </CardHeader>
                   <CardContent className="space-y-3">
-                    <div className="grid grid-cols-2 gap-4 text-sm md:grid-cols-3 lg:grid-cols-6">
-                      <div className="bg-white p-3 rounded border border-blue-200">
-                        <p className="text-blue-600 font-bold text-lg">{auditReport.totalRecords}</p>
-                        <p className="text-blue-700 text-xs mt-1">Total Records</p>
+                    <div className="grid grid-cols-2 gap-3 text-sm md:grid-cols-3 lg:grid-cols-6">
+                      <div className="bg-white p-2.5 rounded border border-blue-200 min-w-0">
+                        <p className="text-blue-600 font-bold text-base truncate">{auditReport.totalRecords}</p>
+                        <p className="text-blue-700 text-xs mt-1 truncate">Total Records</p>
                       </div>
-                      <div className="bg-white p-3 rounded border border-blue-200">
-                        <p className="text-green-600 font-bold text-lg">{auditReport.totalRecords - auditReport.issuesFound}</p>
-                        <p className="text-blue-700 text-xs mt-1">Valid Records</p>
+                      <div className="bg-white p-2.5 rounded border border-blue-200 min-w-0">
+                        <p className="text-green-600 font-bold text-base truncate">{auditReport.totalRecords - auditReport.issuesFound}</p>
+                        <p className="text-blue-700 text-xs mt-1 truncate">Valid Records</p>
                       </div>
-                      <div className={`p-3 rounded border ${auditReport.issuesFound > 0 ? 'bg-amber-50 border-amber-200' : 'bg-white border-blue-200'}`}>
-                        <p className={`${auditReport.issuesFound > 0 ? 'text-amber-600' : 'text-green-600'} font-bold text-lg`}>{auditReport.issuesFound}</p>
-                        <p className="text-blue-700 text-xs mt-1">Issues Found</p>
+                      <div className={`p-2.5 rounded border min-w-0 ${auditReport.issuesFound > 0 ? 'bg-amber-50 border-amber-200' : 'bg-white border-blue-200'}`}>
+                        <p className={`${auditReport.issuesFound > 0 ? 'text-amber-600' : 'text-green-600'} font-bold text-base truncate`}>{auditReport.issuesFound}</p>
+                        <p className="text-blue-700 text-xs mt-1 truncate">Issues Found</p>
                       </div>
-                      <div className="bg-white p-3 rounded border border-blue-200">
-                        <p className="text-purple-600 font-bold text-lg">
+                      <div className="bg-white p-2.5 rounded border border-blue-200 min-w-0">
+                        <p className="text-purple-600 font-bold text-base truncate">
                           {payments && finances ? Math.round((payments.length / finances.length) * 100) : 0}%
                         </p>
-                        <p className="text-blue-700 text-xs mt-1">Payment Coverage</p>
+                        <p className="text-blue-700 text-xs mt-1 truncate">Payment Coverage</p>
                       </div>
-                      <div className={`p-3 rounded border ${totalProfit >= 0 ? 'bg-white border-blue-200' : 'bg-red-50 border-red-200'}`}>
-                        <div className="flex items-center gap-1">
+                      <div className={`p-2.5 rounded border min-w-0 ${totalProfit >= 0 ? 'bg-white border-blue-200' : 'bg-red-50 border-red-200'}`}>
+                        <div className="flex items-center gap-1 min-w-0">
                           {totalProfit >= 0 ? (
-                            <TrendingUp className="h-4 w-4 text-green-600" />
+                            <TrendingUp className="h-4 w-4 text-green-600 flex-shrink-0" />
                           ) : (
-                            <TrendingDown className="h-4 w-4 text-red-600" />
+                            <TrendingDown className="h-4 w-4 text-red-600 flex-shrink-0" />
                           )}
-                          <p className={`font-bold text-lg ${totalProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                            {totalProfit.toLocaleString('en-US', { maximumFractionDigits: 0 })}
+                          <p className={`font-bold text-base ${totalProfit >= 0 ? 'text-green-600' : 'text-red-600'} truncate`}>
+                            {isFinite(totalProfit) ? totalProfit.toLocaleString('en-US', { maximumFractionDigits: 0 }) : '0'}
                           </p>
                         </div>
-                        <p className="text-blue-700 text-xs mt-1">Total Profit</p>
+                        <p className="text-blue-700 text-xs mt-1 truncate">Total Profit</p>
                       </div>
-                      <div className={`p-3 rounded border ${averageProfit >= 0 ? 'bg-white border-blue-200' : 'bg-red-50 border-red-200'}`}>
-                        <div className="flex items-center gap-1">
+                      <div className={`p-2.5 rounded border min-w-0 ${averageProfit >= 0 ? 'bg-white border-blue-200' : 'bg-red-50 border-red-200'}`}>
+                        <div className="flex items-center gap-1 min-w-0">
                           {averageProfit >= 0 ? (
-                            <TrendingUp className="h-4 w-4 text-green-600" />
+                            <TrendingUp className="h-4 w-4 text-green-600 flex-shrink-0" />
                           ) : (
-                            <TrendingDown className="h-4 w-4 text-red-600" />
+                            <TrendingDown className="h-4 w-4 text-red-600 flex-shrink-0" />
                           )}
-                          <p className={`font-bold text-lg ${averageProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                            {averageProfit.toLocaleString('en-US', { maximumFractionDigits: 0 })}
+                          <p className={`font-bold text-base ${averageProfit >= 0 ? 'text-green-600' : 'text-red-600'} truncate`}>
+                            {isFinite(averageProfit) ? averageProfit.toLocaleString('en-US', { maximumFractionDigits: 0 }) : '0'}
                           </p>
                         </div>
-                        <p className="text-blue-700 text-xs mt-1">Avg Profit</p>
+                        <p className="text-blue-700 text-xs mt-1 truncate">Avg Profit</p>
                       </div>
                     </div>
                   </CardContent>

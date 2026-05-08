@@ -49,7 +49,8 @@ import {
   useUpdateMaterial,
   useUpdateTransportFinance,
   useCreateTransportPayment,
-  useDeleteTransportPayment
+  useDeleteTransportPayment,
+  useBulkRepairTransportFinance
 } from '@/hooks/useTransport';
 import { CreateDriverModal } from '@/components/transport/CreateDriverModal';
 import { EditDriverModal } from '@/components/transport/EditDriverModal';
@@ -64,6 +65,7 @@ import { CreateInvoiceModal } from '@/components/invoices/CreateInvoiceModal';
 import { CreatePaymentModal } from '@/components/transport/CreatePaymentModal';
 import { EditPaymentModal } from '@/components/transport/EditPaymentModal';
 import { generateAuditReport, AuditReport, AuditIssue } from '@/utils/financeAudit';
+import { repairAllFinanceRecords, generateRepairSummary } from '@/utils/transportDataRepair';
 
 interface Driver {
   id: string;
@@ -178,6 +180,7 @@ export default function Transport({ initialTab = 'drivers' }: TransportProps) {
   const deleteFinance = useDeleteTransportFinance();
   const createPayment = useCreateTransportPayment();
   const deletePayment = useDeleteTransportPayment();
+  const bulkRepair = useBulkRepairTransportFinance();
 
   const handleDeleteDriver = async (driverId: string) => {
     try {
@@ -208,6 +211,51 @@ export default function Transport({ initialTab = 'drivers' }: TransportProps) {
       await deleteFinance.mutateAsync(financeId);
     } catch (error) {
       // Error handling is done in the mutation's onError
+    }
+  };
+
+  const handleRepairAuditIssues = async () => {
+    if (!finances || finances.length === 0) {
+      toast.error('No transport finance records to repair');
+      return;
+    }
+
+    try {
+      const repairResults = repairAllFinanceRecords(
+        finances,
+        payments || [],
+        vehicles?.[0]?.id,
+        materials?.[0]?.id
+      );
+
+      const summary = generateRepairSummary(repairResults);
+
+      if (summary.fixedRecords === 0) {
+        toast.info('No issues found that need fixing');
+        return;
+      }
+
+      const recordsToUpdate = repairResults
+        .filter(r => r.fixed)
+        .map(r => {
+          const original = finances.find(f => f.id === r.recordId);
+          return {
+            id: r.recordId,
+            ...original,
+            ...r.changes
+          };
+        });
+
+      await bulkRepair.mutateAsync(recordsToUpdate);
+
+      toast.success(
+        `Fixed ${summary.fixedRecords} record${summary.fixedRecords !== 1 ? 's' : ''} with ${summary.fixedIssues} issue${summary.fixedIssues !== 1 ? 's' : ''}`
+      );
+
+      retryFinances();
+    } catch (error) {
+      toast.error('Failed to repair audit issues');
+      console.error('Repair error:', error);
     }
   };
 
@@ -716,14 +764,24 @@ export default function Transport({ initialTab = 'drivers' }: TransportProps) {
             </div>
             <div className="flex gap-2 ml-2">
               {auditReport && auditReport.issuesFound > 0 && (
-                <Button
-                  variant="outline"
-                  onClick={() => setShowAuditDetails(!showAuditDetails)}
-                  className="text-amber-600 hover:text-amber-700"
-                >
-                  <AlertCircle className="h-4 w-4 mr-2" />
-                  Audit Issues ({auditReport.issuesFound})
-                </Button>
+                <>
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowAuditDetails(!showAuditDetails)}
+                    className="text-amber-600 hover:text-amber-700"
+                  >
+                    <AlertCircle className="h-4 w-4 mr-2" />
+                    Audit Issues ({auditReport.issuesFound})
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={handleRepairAuditIssues}
+                    disabled={bulkRepair.isPending}
+                    className="text-green-600 hover:text-green-700"
+                  >
+                    {bulkRepair.isPending ? 'Repairing...' : 'Fix All Issues'}
+                  </Button>
+                </>
               )}
               <Button variant="outline" onClick={handleExportFinance}>
                 <Download className="h-4 w-4 mr-2" />
@@ -751,8 +809,18 @@ export default function Transport({ initialTab = 'drivers' }: TransportProps) {
               {/* Data Quality Dashboard */}
               {!isFinancesLoading && auditReport && (
                 <Card className="mb-4 border-blue-200 bg-blue-50">
-                  <CardHeader className="pb-3">
+                  <CardHeader className="pb-3 flex justify-between items-start">
                     <CardTitle className="text-blue-900 text-base">Data Quality Summary</CardTitle>
+                    {auditReport.issuesFound > 0 && (
+                      <Button
+                        onClick={handleRepairAuditIssues}
+                        disabled={bulkRepair.isPending}
+                        size="sm"
+                        className="bg-green-600 hover:bg-green-700 text-white"
+                      >
+                        {bulkRepair.isPending ? 'Repairing...' : 'Repair All'}
+                      </Button>
+                    )}
                   </CardHeader>
                   <CardContent className="space-y-3">
                     <div className="grid grid-cols-2 gap-4 text-sm md:grid-cols-4 lg:grid-cols-5">

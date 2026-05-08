@@ -2324,6 +2324,41 @@ export function useDeleteTransportPayment() {
   });
 }
 
+/**
+ * Hook to bulk repair transport finance records
+ */
+export function useBulkRepairTransportFinance() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (recordsToRepair: Array<{ id: string; [key: string]: any }>) => {
+      const db = getDatabase();
+      const results = [];
+
+      for (const record of recordsToRepair) {
+        const { id, ...updateData } = record;
+        const { data, error } = await db.update('transport_finance', id, updateData);
+
+        if (error) {
+          throw error;
+        }
+
+        results.push(data);
+      }
+
+      return results;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['transport_finance'] });
+      queryClient.invalidateQueries({ queryKey: ['transport_payments'] });
+      toast.success('Transport finance records repaired successfully');
+    },
+    onError: (error) => {
+      toast.error(error?.message || 'Failed to repair finance records');
+    },
+  });
+}
+
 // ============================================
 // Types for export
 // ============================================

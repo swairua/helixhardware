@@ -21,4 +21,5 @@ export {
   useCreateTransportPayment,
   useUpdateTransportPayment,
   useDeleteTransportPayment,
+  useBulkRepairTransportFinance,
 } from './useDatabase';

@@ -75,10 +75,9 @@ export function validateFinanceRecord(
   }
 
   // Check 2: Validate payment status consistency
-  // Only validate if we have payment records to compare against
-  // If payments array is empty, don't flag as mismatch since the status reflects no payments recorded yet
-  if (payments.length > 0) {
-    const relatedPayments = payments.filter(p => p.trip_id === record.id);
+  // Only validate if this specific trip has related payment records
+  const relatedPayments = payments.filter(p => p.trip_id === record.id);
+  if (relatedPayments.length > 0) {
     const totalPaid = relatedPayments.reduce((sum, p) => sum + ((p.payment_amount || p.amount) || 0), 0);
     const expectedStatus = totalPaid >= (record.selling_price || 0) ? 'paid' : 'unpaid';
 

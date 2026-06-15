@@ -778,7 +778,7 @@ export const generatePDF = (data: DocumentData, downloadAsFile: boolean = true) 
               <td class="amount" style="color: #2BB673;">${formatCurrency(data.paid_amount || 0)}</td>
             </tr>
             <tr class="balance-info">
-              <td class="label" style="font-weight: bold;">Balance Due:</td>
+              <td class="label" style="font-weight: bold; color: ${(data.balance_due || 0) <= 0 ? '#2BB673' : '#DC2626'};">Balance Due:</td>
               <td class="amount" style="font-weight: bold; color: ${(data.balance_due || 0) > 0 ? '#DC2626' : '#2BB673'};">${formatCurrency(data.balance_due || 0)}</td>
             </tr>
             ` : ''}

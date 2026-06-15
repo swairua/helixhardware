@@ -2,6 +2,7 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
+import { VitePWA } from "vite-plugin-pwa";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
@@ -202,6 +203,46 @@ export default defineConfig(({ mode }) => {
       react(),
       mode === 'development' &&
       componentTagger(),
+      VitePWA({
+        manifest: {
+          name: "Helix General Hardware",
+          short_name: "Helix Hardware",
+          description: "Trusted supplier of general hardware and supplies",
+          theme_color: "#2563eb",
+          background_color: "#ffffff",
+          display: "standalone",
+          orientation: "portrait-primary",
+          scope: "/",
+          start_url: "/",
+        },
+        includeAssets: ["favicon.ico", "apple-touch-icon.png", "masked-icon.svg"],
+        registerType: "autoUpdate",
+        injectRegister: "auto",
+        workbox: {
+          globPatterns: ["**/*.{js,css,html,ico,png,svg,webp,woff,woff2}"],
+          maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5 MB
+          runtimeCaching: [
+            {
+              urlPattern: /^https:\/\/fonts\.(googleapis|gstatic)\.com\/.*/i,
+              handler: "CacheFirst",
+              options: {
+                cacheName: "google-fonts-cache",
+                expiration: {
+                  maxEntries: 10,
+                  maxAgeSeconds: 60 * 60 * 24 * 365, // 1 year
+                },
+              },
+            },
+          ],
+          skipWaiting: true,
+          clientsClaim: true,
+        },
+        devOptions: {
+          enabled: true,
+          navigateFallback: "index.html",
+          suppressWarnings: true,
+        },
+      }),
     ].filter(Boolean),
     resolve: {
       alias: {

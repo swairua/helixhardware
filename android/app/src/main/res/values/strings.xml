@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Helix General Hardware</string>
+    <string name="title_activity_main">Helix General Hardware</string>
+    <string name="package_name">io.helix.hardware</string>
+    <string name="custom_url_scheme">io.helix.hardware</string>
+</resources>

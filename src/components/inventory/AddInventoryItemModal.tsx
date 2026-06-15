@@ -76,7 +76,7 @@ export function AddInventoryItemModal({ open, onOpenChange, onSuccess }: AddInve
   const createProduct = useCreateProduct();
   const createUnitMutation = useCreateUnitOfMeasure();
   const { currentCompany } = useCurrentCompany();
-  const { provider } = useDatabase();
+  const { provider, db } = useDatabase();
 
   // Load units of measure from database
   const { data: units, isLoading: unitsLoading, refetch: refetchUnits } = useUnitsOfMeasure();

@@ -50,8 +50,7 @@ export const useCreateReceiptTransactional = () => {
 
   return useMutation({
     mutationFn: async (input: TransactionalReceiptInput) => {
-      // Get the backend API URL from environment
-      const backendUrl = import.meta.env.VITE_BACKEND_API_URL || 'http://localhost:3001/backend';
+      const backendUrl = '';
 
       // Prepare request payload
       const payload = {

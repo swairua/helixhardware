@@ -3,11 +3,7 @@
  */
 
 export async function callCustomApiAction(action: string, data: any) {
-  // Get the API URL from environment or construct it
-  const apiUrl = import.meta.env.VITE_EXTERNAL_API_URL || 
-    (typeof window !== 'undefined' && window.location.origin ? 
-      `${window.location.origin}/api.php` : 
-      'https://helixgeneralhardware.com/api.php');
+  const apiUrl = '/api.php';
 
   try {
     const response = await fetch(apiUrl, {

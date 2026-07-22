@@ -8,8 +8,8 @@ services:
     envVars:
       - key: NODE_VERSION
         value: "20"
-      - key: VITE_EXTERNAL_API_URL
-        value: https://helixgeneralhardware.com/api.php
+      - key: API_UPSTREAM_URL
+        sync: false
     autoDeploy: false
     routes:
       - path: /
